@@ -100,4 +100,29 @@ def edge_index(n):
 
     
     return edge_index
+
+
+
+def loss_function(model, graph, edge_index):
+    """
+    Loss function for the Graph Neural Network
+    
+    Args:
+        model (_type_): Graph Neural Network model
+        graph (_type_): Graph object
+
+    Returns:
+        _type_: _description_
+    """
+    alpha = 0.01
+    base_loss = model.loss(graph)
+    
+    source_node = graph.x[model.edge_index[0]]
+    target_node = graph.x[model.edge_index[1]]
+    
+    message = model.message(target_node, source_node)
+    
+    message_reg = alpha*torch.sum(torch.abs(message))
+    
+    return base_loss, message_reg
     
