@@ -88,5 +88,6 @@ def adjacency_tensor(n):
     
     ones = torch.ones(n,n, dtype = torch.int32)
     edge_index = ones - torch.eye(n, dtype = torch.int32)
+    edge_index = edge_index.to(torch.long)
     return edge_index
     
