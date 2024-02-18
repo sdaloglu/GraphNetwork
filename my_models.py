@@ -5,14 +5,14 @@ from torch.nn import ReLU, Softplus
 
 class GN(MessagePassing):
     # Using the MessagePassing base class from PyTorch Geometric
-    def __init__(self, input_dim=6, message_dim=2, output_dim=2, hidden_units = 100, aggregation = 'add', dt=0.1):
+    def __init__(self, input_dim=6, message_dim=100, output_dim=2, hidden_units = 100, aggregation = 'add', dt=0.1):
        
         # Specify the aggregation method from the temporary object of the superclass
         super(GN,self).__init__(aggr = aggregation)   # Adding forces as an inductive bias of the GN model
         
         self.edge_model = nn.Sequential( 
             # Edge model aiming to learn the true force
-            nn.Linear(input_dim, hidden_units),
+            nn.Linear(2*input_dim, hidden_units),
             ReLU(),
             nn.Linear(hidden_units, hidden_units),
             ReLU(),
@@ -24,7 +24,8 @@ class GN(MessagePassing):
 
         self.node_model = nn.Sequential(
             # Node model aiming to learn the true acceleration
-            nn.Linear(input_dim, hidden_units),
+            # The input is the concatenation of the aggregated messages and the input of the target node
+            nn.Linear(message_dim+input_dim, hidden_units),
             ReLU(),
             nn.Linear(hidden_units, hidden_units),
             ReLU(),
@@ -67,7 +68,7 @@ class GN(MessagePassing):
         # forward pass of the neural network
         # Calling propagate() will in turn call message(), aggregate(), and update()
         # size argument is optional and can be used to specify the dimensions of the source and target node feature matrices
-        x = x
+     
         return self.propagate(edge_index, x = x, size = (x.size(0),x.size(0)))
     
     def loss(self, graph):
