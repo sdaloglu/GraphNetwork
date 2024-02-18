@@ -75,7 +75,7 @@ class GN(MessagePassing):
         # Using MAE as the loss function
         return torch.sum(torch.abs(graph.y - self.forward(graph.x, graph.edge_index)))
     
-def adjacency_tensor(n):
+def edge_index(n):
     """
     Creating an adjacency tensor for a fully connected graph with n nodes
     
@@ -86,8 +86,16 @@ def adjacency_tensor(n):
         _type_: _description_
     """
     
+    # Create an adjacency matrix for a fully connected graph, excluding self-loops
     ones = torch.ones(n,n, dtype = torch.int32)
-    edge_index = ones - torch.eye(n, dtype = torch.int32)
-    edge_index = edge_index.to(torch.long)
+    adjacency_matrix = ones - torch.eye(n, dtype = torch.int32)
+    
+    
+    # Find indices of non-zero elements (edges)
+    edge_index = (adjacency_matrix == 1).nonzero(as_tuple=False).t()
+
+    # Now, edge_index is a [2, num_edges] tensor 
+
+    
     return edge_index
     
