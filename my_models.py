@@ -5,7 +5,7 @@ from torch.nn import ReLU, Softplus
 
 class GN(MessagePassing):
     # Using the MessagePassing base class from PyTorch Geometric
-    def __init__(self, input_dim=6, message_dim=100, output_dim=2, hidden_units = 100, aggregation = 'add', dt=0.1, edge_index):
+    def __init__(self, edge_index, input_dim=6, message_dim=100, output_dim=2, hidden_units = 100, aggregation = 'add', dt=0.1):
        
         # Specify the aggregation method from the temporary object of the superclass
         super(GN,self).__init__(aggr = aggregation)   # Adding forces as an inductive bias of the GN model
