@@ -67,6 +67,7 @@ class GN(MessagePassing):
         # forward pass of the neural network
         # Calling propagate() will in turn call message(), aggregate(), and update()
         # size argument is optional and can be used to specify the dimensions of the source and target node feature matrices
+        x = x
         return self.propagate(edge_index, x = x, size = (x.size(0),x.size(0)))
     
     def loss(self, graph):
