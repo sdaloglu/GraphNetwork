@@ -5,7 +5,7 @@ from torch.nn import ReLU, Softplus
 
 class GN(MessagePassing):
     # Using the MessagePassing base class from PyTorch Geometric
-    def __init__(self, input_dim, n_layers = 5, hidden_units = 100, message_dim=2, node_dim=6, aggregation = 'add'):
+    def __init__(self, input_dim=6, message_dim=2, output_dim=2, hidden_units = 100, aggregation = 'add', dt=0.1):
        
         # Specify the aggregation method from the temporary object of the superclass
         super(GN,self).__init__(aggr = aggregation)   # Adding forces as an inductive bias of the GN model
@@ -30,7 +30,7 @@ class GN(MessagePassing):
             ReLU(),
             nn.Linear(hidden_units, hidden_units),
             ReLU(),
-            nn.Linear(hidden_units, node_dim),           
+            nn.Linear(hidden_units, output_dim),           
             
         )
         
@@ -68,3 +68,25 @@ class GN(MessagePassing):
         # Calling propagate() will in turn call message(), aggregate(), and update()
         # size argument is optional and can be used to specify the dimensions of the source and target node feature matrices
         return self.propagate(edge_index, x = x, size = (x.size(0),x.size(0)))
+    
+    def loss(self, graph):
+        
+        # Compare the ground truth acceleration with the predicted acceleration (output of the node model)
+        # Using MAE as the loss function
+        return torch.sum(torch.abs(graph.y - self.forward(graph.x, graph.edge_index)))
+    
+def adjacency_tensor(n):
+    """
+    Creating an adjacency tensor for a fully connected graph with n nodes
+    
+    Args:
+        n (_type_): number of nodes
+
+    Returns:
+        _type_: _description_
+    """
+    
+    ones = torch.ones(n,n)
+    edge_index = ones - torch.eye(n)
+    return edge_index
+    
