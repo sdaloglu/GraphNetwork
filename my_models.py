@@ -35,15 +35,15 @@ class GN(MessagePassing):
         )
         
     
-    def message(self, source_node, target_node):
+    def message(self, x_i, x_j):
         # Compute messages from the source node to target node
         # the message function takes an input of the concatenation of the features of the two nodes
-        return self.edge_model(torch.cat([source_node, target_node], dim = 1))
+        return self.edge_model(torch.cat([x_i, x_j], dim = 1))
         
         
     # The default aggregate function is used from the superclass (summing the messages)
     
-    def update(self, aggr_out, target_node):
+    def update(self, aggr_out, x):
         
         """First we concatenate the aggregated messages and the input of the target node, 
         then we pass it through the node model.
@@ -52,7 +52,7 @@ class GN(MessagePassing):
             _type_: _description_
         """
         
-        return self.node_model(torch.cat([aggr_out, target_node], dim = 1))
+        return self.node_model(torch.cat([aggr_out, x], dim = 1))
         
         
     def forward(self, x, edge_index):
