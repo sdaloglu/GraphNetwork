@@ -78,7 +78,8 @@ class GN(MessagePassing):
         edge_index = graph.edge_index
         # Compare the ground truth acceleration with the predicted acceleration (output of the node model)
         # Using MAE as the loss function
-        return torch.sum(torch.abs(graph.y - self.propagate(edge_index, x = x, size = (x.size(0),x.size(0)))))
+        return torch.sum(torch.abs(graph.y - self.forward(graph.x, graph.edge_index)))
+     
     
 def edge_index(n):
     """
