@@ -1,0 +1,11 @@
+# Ignore the data directory
+data/
+
+# Ignore .DS_Store files
+.DS_Store
+
+# Ignore the python notebooks
+*.ipynb
+
+# Ignore the python cache files
+__pycache__/
