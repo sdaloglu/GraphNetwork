@@ -1,10 +1,10 @@
-  """
-  Simulation functions and classes for particle simulations.
-  Taken from Dr. Miles Cranmer's public repository at:
-  
-  https://github.com/MilesCranmer/symbolic_deep_learning
-  
-  """
+"""
+Simulation functions and classes for particle simulations.
+Taken from Dr. Miles Cranmer's public repository at:
+
+https://github.com/MilesCranmer/symbolic_deep_learning
+
+"""
 
 import jax
 from jax import ops
