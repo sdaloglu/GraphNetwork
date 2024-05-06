@@ -1,13 +1,15 @@
 from sklearn.model_selection import train_test_split
 import numpy as np
 import torch
-from my_models import edge_index, GN
 from torch_geometric.data import Data
 from torch_geometric.loader import DataLoader
 from torch.optim.lr_scheduler import ReduceLROnPlateau, OneCycleLR
 from tqdm import tqdm
-from my_models import loss_function
-
+import sys
+sys.path.append('utils')    # Add the utils directory to the path
+from my_models import loss_function, edge_index, GN
+from copy import deepcopy as copy
+import pickle as pkl
 
 # Open the simulated data from the data directory
 data = np.load('data/spring_sim_4_particles_data.npy', allow_pickle=True)
@@ -189,3 +191,20 @@ for epoch in tqdm(range(epochs)):
   print(cum_loss/(batch_size*5000))   #Averaging over the epoch
   print("__________________")
 
+
+##################################################################
+################## Save the Trained Model ########################
+##################################################################
+
+recorded_models = []
+
+# Append the trained model
+model.cpu()
+recorded_models.append(model.state_dict())
+
+# Save the trained model
+pkl.dump(recorded_models,
+         open('models_over_time.pkl', 'wb'))
+
+# Print if the model is saved
+print("Model saved successfully")
