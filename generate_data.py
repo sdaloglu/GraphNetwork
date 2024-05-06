@@ -48,7 +48,7 @@ ns = 10000
 # Potential (see below for options)
 sim = 'r2'
 # Number of nodes
-n = 4
+n_particles = 4
 # Dimension
 dim = 2
 # Number of time steps & proportional to the duration of the simulation
@@ -72,9 +72,9 @@ sim_sets = [
 #Select the hand-tuned dt value for a smooth simulation
 # (since scales are different in each potential):
 dt = [ss['dt'][0] for ss in sim_sets if ss['sim'] == sim][0]
-title = '{}_n={}_dim={}_nt={}_dt={}'.format(sim, n, dim, nt, dt)
+title = '{}_n={}_dim={}_nt={}_dt={}'.format(sim, n_particles, dim, nt, dt)
 
-s = SimulationDataset(sim, n=n, dim=dim, nt=nt//2, dt=dt)
+s = SimulationDataset(sim, n=n_particles, dim=dim, nt=nt//2, dt=dt)
 # Update this to your own dataset, or regenerate:
 base_str = './'
 data_str = title
