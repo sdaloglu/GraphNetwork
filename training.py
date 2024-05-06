@@ -8,8 +8,10 @@ from tqdm import tqdm
 import sys
 sys.path.append('utils')    # Add the utils directory to the path
 from my_models import loss_function, edge_index, GN
+from messages import get_messages
 from copy import deepcopy as copy
 import pickle as pkl
+from generate_data import n_particles
 
 # Open the simulated data from the data directory
 data = np.load('data/spring_sim_4_particles_data.npy', allow_pickle=True)
@@ -30,7 +32,7 @@ else:
   print("CUDA or MPS is not available using CPU")
   
 
-# Creating torch tensors from nupy arrays from simulation
+# Creating torch tensors from numpy arrays from simulation
 X_ = torch.from_numpy(np.concatenate([data[:, i] for i in range(0, data.shape[1], 5)]))   # Use time data with step size 5 (record 1 event in 5 events)
 y_ = torch.from_numpy(np.concatenate([a_vals[:, i] for i in range(0, data.shape[1], 5)]))
 
@@ -47,7 +49,7 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = 0.2, shuff
 n_features = X.shape[2]
 
 # Number of particles/nodes
-n = 4
+n = n_particles
 
 # Dimension of the simulation
 dim = 2
@@ -77,33 +79,35 @@ data = Data(x = X_train[0], edge_index=edge_indices, y =y_train[0])
 ##################################################################
 batch_size = 60
 
-# Create a list of 1,000,000 (100x10,000) graph data type for the simulation -- Training Data
+# Create a list of 800,000 (100x10,000)*(0.8) graph data type for the simulation -- Training Data
 train_data = []
 for i in range(len(X_train)):
-
+  # Create a graph data type
   data = Data(x = X_train[i], edge_index=edge_indices, y =y_train[i])
   train_data.append(data)
 
 # Create a loader to batch from the train_data
 train_loader = DataLoader(train_data, batch_size=batch_size, shuffle=True)
 
+# len(X_train) = 800,000. --> Number of training data points
+# len(train_data) = 800,000. --> Number of training data points
+# len(train_loader) = 13,334. --> Number of batches = [total data points]/[batch size]
 
 
-# Create a list of 1,000,000 (100x10,000) graph data type for the simulation -- Testing Data
+
+# Create a list of 200,000 (100x10,000)*(0.2) graph data type for the simulation -- Testing Data
 test_data = []
 for i in range(len(X_test)):
-
+  # Create a graph data type
   data = Data(x = X_test[i], edge_index=edge_indices, y=y_test[i])
   test_data.append(data)
 
 # Create a loader to batch from the test_data, batch size is larger since no gradient calculation is required for evalution
 test_loader =  DataLoader(test_data, batch_size=int(20*batch_size), shuffle=True)
 
-
-
-# len(train_data) = 800,000. --> Number of training data points
-# len(train_loader) = 13,334. --> Number of bathces = [total data points]/[batch size]
-
+# len(X_test) = 200,000. --> Number of testing data points
+# len(test_data) = 200,000. --> Number of testing data points
+# len(test_loader) = 167. --> Number of batches = [total data points]/[batch size]
 
 
 
@@ -129,8 +133,8 @@ optimizer = torch.optim.Adam(params=model.parameters(),lr=learning_rate, weight_
 # Define learning rate scheduler (start with low rate, gradually increasing to max, then lower than the initial learning rate)
 scheduler = OneCycleLR(optimizer, max_lr=0.001, steps_per_epoch=len(train_loader) , epochs=epochs, final_div_factor=1e5)
 
-
-
+# Define an empty array for the messages
+messages_over_time = []
 
 # Training Loop
 for epoch in tqdm(range(epochs)):
@@ -190,6 +194,16 @@ for epoch in tqdm(range(epochs)):
 
   print(cum_loss/(batch_size*5000))   #Averaging over the epoch
   print("__________________")
+  
+  current_message = get_messages(model,test_loader,dim=dim,msg_dim=100)
+  
+  # Adding epoch and loss information
+  current_message['epoch'] = epoch
+  current_message['loss'] = cum_loss/(batch_size*5000)
+  messages_over_time.append(current_message)
+  
+  
+  
 
 
 ##################################################################
@@ -206,5 +220,13 @@ recorded_models.append(model.state_dict())
 pkl.dump(recorded_models,
          open('models_over_time.pkl', 'wb'))
 
+# Save the messages
+pkl.dump(messages_over_time,
+         open('messages_over_time.pkl', 'wb'))
+
+
+
 # Print if the model is saved
 print("Model saved successfully")
+
+
