@@ -9,3 +9,6 @@ data/
 
 # Ignore the python cache files
 __pycache__/
+
+# Ignore any bash slurm files for the HPC
+slurm*
