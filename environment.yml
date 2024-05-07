@@ -74,7 +74,6 @@ dependencies:
   - libdeflate=1.19
   - libexpat=2.5.0
   - libffi=3.4.2
-  - libgfortran=5.0.0
   - libgfortran5=13.2.0
   - libglib=2.78.3
   - libgrpc=1.58.2
@@ -85,7 +84,6 @@ dependencies:
   - liblapack=3.9.0
   - libopenblas=0.3.26
   - libopenvino=2023.2.0
-  - libopenvino-arm-cpu-plugin=2023.2.0
   - libopenvino-auto-batch-plugin=2023.2.0
   - libopenvino-auto-plugin=2023.2.0
   - libopenvino-hetero-plugin=2023.2.0
