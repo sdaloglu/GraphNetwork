@@ -54,22 +54,22 @@ def get_messages(model, test_loader, dim = 2, msg_dim = 100):
             columns=columns
         ))
         
-        messages = pd.concat(messages)
-        
-        # Adding the extra information to the messages dataframe --> delta x and delta y
-        messages['dx'] = messages.x2 - messages.x1
-        messages['dy'] = messages.y2 - messages.y1
-        
-        if dim == 2:
-            messages['r'] = np.sqrt(
-                (messages.dx)**2 + (messages.dy)**2
-            )
-        elif dim == 3:
-            # Add the third dimension delta z
-            messages['dz'] = messages.z1 - messages.z2
-            messages['r'] = np.sqrt(
-                (messages.dx)**2 + (messages.dy)**2 + (messages.dz)**2
-            )
+    messages = pd.concat(messages)
+    
+    # Adding the extra information to the messages dataframe --> delta x and delta y
+    messages['dx'] = messages.x2 - messages.x1
+    messages['dy'] = messages.y2 - messages.y1
+    
+    if dim == 2:
+        messages['r'] = np.sqrt(
+            (messages.dx)**2 + (messages.dy)**2
+        )
+    elif dim == 3:
+        # Add the third dimension delta z
+        messages['dz'] = messages.z1 - messages.z2
+        messages['r'] = np.sqrt(
+            (messages.dx)**2 + (messages.dy)**2 + (messages.dz)**2
+        )
     
     return messages
 
