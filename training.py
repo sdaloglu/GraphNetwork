@@ -216,13 +216,18 @@ recorded_models = []
 model.cpu()
 recorded_models.append(model.state_dict())
 
+# Save the data to a file
+# Create a new directory called models if it does not exist and save the data
+if not os.path.exists('models'):
+  os.mkdir('models')
+  
 # Save the trained model
 pkl.dump(recorded_models,
-         open('models_over_time.pkl', 'wb'))
+         open('models/models_over_time.pkl', 'wb'))
 
 # Save the messages
 pkl.dump(messages_over_time,
-         open('messages_over_time.pkl', 'wb'))
+         open('models/messages_over_time.pkl', 'wb'))
 
 
 
