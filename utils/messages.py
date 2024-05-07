@@ -1,4 +1,4 @@
-# This file contains the organizing and recording of the learned messages over time
+# This file contains the function to organize and record the learned messages over time
 
 import numpy as np
 import sys
@@ -36,7 +36,7 @@ def get_messages(model, test_loader, dim = 2, msg_dim = 100):
         x_target = batch.x[model.edge_index[1]].cpu()
         
         # Get the messages
-        message = model.node_model(torch.cat([x_source, x_target], dim = 1))
+        message = model.edge_model(torch.cat([x_source, x_target], dim = 1))
         
         # Append the node features to the messages list
         message_with_node_features = torch.cat((x_source,x_target,message), dim = 1)
