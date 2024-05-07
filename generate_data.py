@@ -46,7 +46,7 @@ else:
 # Number of simulations to run - Number of data points (can increase to 100,000 if trapazoidal rule is used instead of RK4)
 ns = 10000
 # Potential (see below for options)
-sim = 'r2'
+sim = 'spring'
 # Number of nodes
 n_particles = 4
 # Dimension
