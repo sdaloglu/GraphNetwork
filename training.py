@@ -100,7 +100,7 @@ train_loader = DataLoader(train_data, batch_size=batch_size, shuffle=True)
 # This time we shuffle by creatinf random indices, since there is only one batch
 
 np.random.seed(42)
-test_indices = np.random.randint(0,len(X_test),20000)  # Only sample 20000 random data
+test_indices = np.random.randint(0,len(X_test),200000)  # Sample 200000 random data
 test_data = []
 for i in test_indices:
   # Create a graph data type
@@ -108,7 +108,7 @@ for i in test_indices:
   test_data.append(data)
 
 # Create a loader to batch from the test_data, batch size is larger since no gradient calculation is required for evalution
-test_loader =  DataLoader(test_data, batch_size=len(X_test), shuffle=False)
+test_loader =  DataLoader(test_data, batch_size=200, shuffle=False)
 
 # len(X_test) = 200,000. --> Number of testing data points
 # len(test_data) = 200,000. --> Number of testing data points
@@ -127,7 +127,7 @@ lambd = 1e-8
 
 
 # Define epochs
-epochs = 20
+epochs = 30
 
 # set a learning rate but should adjust it to decaying learning schedule (higher to lower)
 learning_rate = 0.001
