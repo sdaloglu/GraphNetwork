@@ -62,7 +62,7 @@ edge_indices = edge_indices.to(device)
 
 # Import the GN model defined in a seperate .py file
 model = GN(input_dim=n_features, # 6 features
-           message_dim=100,   # Dimension of the latent space representation (hopefully force) -- Can be 
+           message_dim=100,   # Dimension of the latent space representation (hopefully force) -- 
            output_dim=dim,   # Dimension of the acceleration -- set by the choice of the physics simulation
            hidden_units = 100,   # Intermediate latent space dimension during the forward pass.
            aggregation = 'add',
@@ -118,8 +118,8 @@ test_loader =  DataLoader(test_data, batch_size=int(20*batch_size), shuffle=True
 
 
 
-#Regularization strength
-lambd = 0.01
+# Weight Regularization strength (weight squared L2)
+lambd = 1e-8
 
 
 # Define epochs
@@ -177,7 +177,7 @@ for epoch in tqdm(range(epochs)):
         l2_reg += torch.norm(param)**2
 
       # Normalize the loss
-      total_loss = (base_loss+message_reg)/batch_size + (lambd/2)*l2_reg
+      total_loss = ((base_loss/n) + (message_reg)/(2/(n*(n-1)))) * (batch_size/int(batch.batch[-1]+1)) + (lambd*l2_reg)
 
       #Backpropagation algorithm to calculate the gradient of loss w.r.t. all model parameters
       total_loss.backward()
@@ -189,7 +189,7 @@ for epoch in tqdm(range(epochs)):
       scheduler.step()
 
       # Calculate the cumilative loss for the batch
-      cum_loss += total_loss.item()
+      cum_loss += base_loss.item()
 
 
 
