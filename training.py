@@ -97,14 +97,18 @@ train_loader = DataLoader(train_data, batch_size=batch_size, shuffle=True)
 
 
 # Create a list of 200,000 (100x10,000)*(0.2) graph data type for the simulation -- Testing Data
+# This time we shuffle by creatinf random indices, since there is only one batch
+
+np.random.seed(42)
+test_indices = np.random.randint(0,len(X_test),20000)  # Only sample 20000 random data
 test_data = []
-for i in range(len(X_test)):
+for i in test_indices:
   # Create a graph data type
   data = Data(x = X_test[i], edge_index=edge_indices, y=y_test[i])
   test_data.append(data)
 
 # Create a loader to batch from the test_data, batch size is larger since no gradient calculation is required for evalution
-test_loader =  DataLoader(test_data, batch_size=int(20*batch_size), shuffle=True)
+test_loader =  DataLoader(test_data, batch_size=len(X_test), shuffle=False)
 
 # len(X_test) = 200,000. --> Number of testing data points
 # len(test_data) = 200,000. --> Number of testing data points
