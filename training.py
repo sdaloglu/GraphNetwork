@@ -122,9 +122,6 @@ test_loader =  DataLoader(test_data, batch_size=200, shuffle=False)
 
 
 
-# Weight Regularization strength (weight squared L2)
-lambd = 1e-8
-
 
 # Define epochs
 epochs = 30
@@ -133,7 +130,7 @@ epochs = 30
 learning_rate = 0.001
 
 # Define the optimizer and specify which parameters should be updated during the training process
-optimizer = torch.optim.Adam(params=model.parameters(),lr=learning_rate, weight_decay=1e-8)
+optimizer = torch.optim.Adam(params=model.parameters(),lr=learning_rate, weight_decay=1e-8)    # This also includes the weight regularization
 
 # Define learning rate scheduler (start with low rate, gradually increasing to max, then lower than the initial learning rate)
 scheduler = OneCycleLR(optimizer, max_lr=0.001, steps_per_epoch=len(train_loader) , epochs=epochs, final_div_factor=1e5)
@@ -165,8 +162,6 @@ for epoch in tqdm(range(epochs)):
 
       
 
-      
-
       # Backward pass and optimize
       optimizer.zero_grad()
 
@@ -174,14 +169,9 @@ for epoch in tqdm(range(epochs)):
       # Calculate the loss
       base_loss, message_reg = loss_function(model=model,graph=batch,edge_index=edge_indices)
 
-      # Adding the weight regularization L2 for the model during training
-
-      l2_reg = torch.tensor(0.).to(device)
-      for param in model.parameters():
-        l2_reg += torch.norm(param)**2
 
       # Normalize the loss
-      total_loss = ((base_loss/n) + (message_reg)/(2/(n*(n-1)))) * (batch_size/int(batch.batch[-1]+1)) + (lambd*l2_reg)
+      total_loss = ((base_loss/n) + (message_reg)/(2/(n*(n-1)))) * (batch_size/int(batch.batch[-1]+1))
 
       #Backpropagation algorithm to calculate the gradient of loss w.r.t. all model parameters
       total_loss.backward()
