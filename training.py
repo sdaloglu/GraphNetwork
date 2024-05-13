@@ -97,7 +97,7 @@ train_loader = DataLoader(train_data, batch_size=batch_size, shuffle=True)
 
 
 # Create a list of 200,000 (100x10,000)*(0.2) graph data type for the simulation -- Testing Data
-# This time we shuffle by creatinf random indices, since there is only one batch
+# This time we shuffle by creating random indices, since there is only one batch
 
 np.random.seed(42)
 test_indices = np.random.randint(0,len(X_test),200000)  # Sample 200000 random data
@@ -149,7 +149,7 @@ for epoch in tqdm(range(epochs)):
   
 
   i = 0
-  while i< 5000:
+  while i< 5000:    # Limiting the number of batches to 5000 per epoch
     for batch in train_loader:
       if i >= 5000:
                 break
@@ -160,18 +160,18 @@ for epoch in tqdm(range(epochs)):
       batch.edge_index = batch.edge_index.to(device)
       batch.batch = batch.batch.to(device)
 
-      
+      print("Batch: "+ str(batch.batch[-1].item()))
 
       # Backward pass and optimize
       optimizer.zero_grad()
 
 
       # Calculate the loss
-      base_loss, message_reg = loss_function(model=model,graph=batch,edge_index=edge_indices)
+      base_loss, message_reg = loss_function(model=model,graph=batch,edge_index=edge_indices, n=n, batch_size=batch_size, regularizer='l1')
 
 
-      # Normalize the loss
-      total_loss = ((base_loss/n) + (message_reg)/(2/(n*(n-1)))) * (batch_size/int(batch.batch[-1]+1))
+      # Normalize the loss -- divide by the batch size (default is 60)
+      total_loss = (base_loss + message_reg) / int(batch.batch[-1]+1)
 
       #Backpropagation algorithm to calculate the gradient of loss w.r.t. all model parameters
       total_loss.backward()
@@ -182,7 +182,7 @@ for epoch in tqdm(range(epochs)):
       # Step the scheduler
       scheduler.step()
 
-      # Calculate the cumilative loss for the batch
+      # Calculate the cumulative loss for the batch
       cum_loss += base_loss.item()
 
 
@@ -190,6 +190,7 @@ for epoch in tqdm(range(epochs)):
   print(cum_loss/(batch_size*5000))   #Averaging over the epoch
   print("__________________")
   
+  # After each epoch get the learned messages of the trained model on a unseen test data
   current_message = get_messages(model,test_loader,dim=dim,msg_dim=100)
   
   # Adding epoch and loss information
