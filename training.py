@@ -160,8 +160,6 @@ for epoch in tqdm(range(epochs)):
       batch.edge_index = batch.edge_index.to(device)
       batch.batch = batch.batch.to(device)
 
-      print("Batch: "+ str(batch.batch[-1].item()))
-
       # Backward pass and optimize
       optimizer.zero_grad()
 
