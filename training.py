@@ -97,14 +97,18 @@ train_loader = DataLoader(train_data, batch_size=batch_size, shuffle=True)
 
 
 # Create a list of 200,000 (100x10,000)*(0.2) graph data type for the simulation -- Testing Data
+# This time we shuffle by creatinf random indices, since there is only one batch
+
+np.random.seed(42)
+test_indices = np.random.randint(0,len(X_test),200000)  # Sample 200000 random data
 test_data = []
-for i in range(len(X_test)):
+for i in test_indices:
   # Create a graph data type
   data = Data(x = X_test[i], edge_index=edge_indices, y=y_test[i])
   test_data.append(data)
 
 # Create a loader to batch from the test_data, batch size is larger since no gradient calculation is required for evalution
-test_loader =  DataLoader(test_data, batch_size=int(20*batch_size), shuffle=True)
+test_loader =  DataLoader(test_data, batch_size=200, shuffle=False)
 
 # len(X_test) = 200,000. --> Number of testing data points
 # len(test_data) = 200,000. --> Number of testing data points
@@ -118,18 +122,15 @@ test_loader =  DataLoader(test_data, batch_size=int(20*batch_size), shuffle=True
 
 
 
-# Weight Regularization strength (weight squared L2)
-lambd = 1e-8
-
 
 # Define epochs
-epochs = 20
+epochs = 30
 
 # set a learning rate but should adjust it to decaying learning schedule (higher to lower)
 learning_rate = 0.001
 
 # Define the optimizer and specify which parameters should be updated during the training process
-optimizer = torch.optim.Adam(params=model.parameters(),lr=learning_rate, weight_decay=1e-8)
+optimizer = torch.optim.Adam(params=model.parameters(),lr=learning_rate, weight_decay=1e-8)    # This also includes the weight regularization
 
 # Define learning rate scheduler (start with low rate, gradually increasing to max, then lower than the initial learning rate)
 scheduler = OneCycleLR(optimizer, max_lr=0.001, steps_per_epoch=len(train_loader) , epochs=epochs, final_div_factor=1e5)
@@ -161,8 +162,6 @@ for epoch in tqdm(range(epochs)):
 
       
 
-      
-
       # Backward pass and optimize
       optimizer.zero_grad()
 
@@ -170,14 +169,9 @@ for epoch in tqdm(range(epochs)):
       # Calculate the loss
       base_loss, message_reg = loss_function(model=model,graph=batch,edge_index=edge_indices)
 
-      # Adding the weight regularization L2 for the model during training
-
-      l2_reg = torch.tensor(0.).to(device)
-      for param in model.parameters():
-        l2_reg += torch.norm(param)**2
 
       # Normalize the loss
-      total_loss = ((base_loss/n) + (message_reg)/(2/(n*(n-1)))) * (batch_size/int(batch.batch[-1]+1)) + (lambd*l2_reg)
+      total_loss = ((base_loss/n) + (message_reg)/(2/(n*(n-1)))) * (batch_size/int(batch.batch[-1]+1))
 
       #Backpropagation algorithm to calculate the gradient of loss w.r.t. all model parameters
       total_loss.backward()
