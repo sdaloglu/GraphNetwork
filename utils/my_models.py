@@ -105,7 +105,7 @@ def edge_index(n):
     return edge_index
 
 
-def loss_function(model, graph, edge_index):
+def loss_function(model, graph, edge_index, n, batch_size, regularizer = 'l1'):
     """
     Loss function for the Graph Neural Network
     
@@ -116,15 +116,23 @@ def loss_function(model, graph, edge_index):
     Returns:
         _type_: _description_
     """
-    alpha = 0.01
+
     base_loss = model.loss(graph)
-    
     source_node = graph.x[model.edge_index[0]]
     target_node = graph.x[model.edge_index[1]]
+        
+    if regularizer == 'l1':
+        alpha = 0.01
+        
+        message = model.message(target_node, source_node)
+        message_reg = alpha * torch.sum(torch.abs(message)) * batch_size
+        message_reg = message_reg / (n*(n-1)/2)  # Normalizing the regularizer by dividing by the number of edges
+        return base_loss, message_reg
     
-    message = model.message(target_node, source_node)
-    
-    message_reg = alpha*torch.sum(torch.abs(message))
-    
-    return base_loss, message_reg
-    
+    elif regularizer == 'kl':
+        alpha = 1.0
+        
+        # Add the KL divergence term to the loss
+        
+        return 0 
+        
