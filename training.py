@@ -15,8 +15,18 @@ import pickle as pkl
 from generate_data import n_particles
 
 # Open the simulated data from the data directory
-data = np.load('data/spring_sim_4_particles_data.npy', allow_pickle=True)
-a_vals = np.load('data/spring_sim_4_particles_acc.npy', allow_pickle=True)
+title_spring = 'data/spring_n=4_dim=2_data.npy'
+title_r1 = 'data/r1_n=4_dim=2_data.npy'
+title_r2 = 'data/r2_n=4_dim=2_data.npy'
+title_charge = 'data/charge_n=4_dim=2_data.npy'
+
+
+# Choose the title of the simulation
+title = title_spring
+
+
+data = np.load('data/{}_data.npy'.format(title), allow_pickle=True)
+a_vals = np.load('data/{}_acc.npy'.format(title), allow_pickle=True)
 
 
 # Checking if the NVIDIA GPU is available (on the cloud service if run on Colab)
@@ -55,6 +65,17 @@ n = n_particles
 # Dimension of the simulation
 dim = 2
 
+# Specify the type of regularization methods used to constrain the learned message embedding
+regularizer = 'l1'
+
+# Based on the regularization type, determine the message dimension (number of message features)
+if regularizer == 'l1' or regularizer == 'standard':
+  message_dim = 100
+elif regularizer == 'kl':
+  message_dim = 200
+elif regularizer == 'bottleneck':
+  message_dim = dim    # Dimension of the true force
+
 # Get the edge index matrix
 edge_indices = edge_index(n)
 # Move to GPU
@@ -62,7 +83,7 @@ edge_indices = edge_indices.to(device)
 
 # Import the GN model defined in a seperate .py file
 model = GN(input_dim=n_features, # 6 features
-           message_dim=100,   # Dimension of the latent space representation (hopefully force) -- 
+           message_dim=message_dim,   # Dimension of the latent space representation (hopefully force) -- 
            output_dim=dim,   # Dimension of the acceleration -- set by the choice of the physics simulation
            hidden_units = 100,   # Intermediate latent space dimension during the forward pass.
            aggregation = 'add',
@@ -78,7 +99,7 @@ data = Data(x = X_train[0], edge_index=edge_indices, y =y_train[0])
 ##################################################################
 ###################### Data Management ###########################
 ##################################################################
-batch_size = 60
+train_batch_size = 60
 
 # Create a list of 800,000 (100x10,000)*(0.8) graph data type for the simulation -- Training Data
 train_data = []
@@ -88,7 +109,7 @@ for i in range(len(X_train)):
   train_data.append(data)
 
 # Create a loader to batch from the train_data
-train_loader = DataLoader(train_data, batch_size=batch_size, shuffle=True)
+train_loader = DataLoader(train_data, batch_size=train_batch_size, shuffle=True)
 
 # len(X_train) = 800,000. --> Number of training data points
 # len(train_data) = 800,000. --> Number of training data points
@@ -100,7 +121,7 @@ train_loader = DataLoader(train_data, batch_size=batch_size, shuffle=True)
 # This time we shuffle by creating random indices, since there is only one batch
 
 np.random.seed(42)
-test_indices = np.random.randint(0,len(X_test),200000)  # Sample 200000 random data
+test_indices = np.random.randint(0,len(X_test),1000)  # Sample 1000 random data
 test_data = []
 for i in test_indices:
   # Create a graph data type
@@ -108,11 +129,12 @@ for i in test_indices:
   test_data.append(data)
 
 # Create a loader to batch from the test_data, batch size is larger since no gradient calculation is required for evalution
-test_loader =  DataLoader(test_data, batch_size=200, shuffle=False)
+test_batch_size = 1000
+test_loader =  DataLoader(test_data, batch_size=test_batch_size, shuffle=False)
 
 # len(X_test) = 200,000. --> Number of testing data points
-# len(test_data) = 200,000. --> Number of testing data points
-# len(test_loader) = 167. --> Number of batches = [total data points]/[batch size]
+# len(test_data) = 1,000. --> Number of testing data points chosen randomly
+# len(test_loader) = 1 --> Number of batches = [total data points]/[batch size]
 
 
 
@@ -163,15 +185,18 @@ for epoch in tqdm(range(epochs)):
       # Backward pass and optimize
       optimizer.zero_grad()
 
+      if regularizer == 'l1' or regularizer == 'kl':
+        
+        # Calculate the loss
+        base_loss, message_reg = loss_function(model=model,graph=batch,edge_index=edge_indices, n=n, batch_size=batch_size, regularizer=regularizer)
+        # Normalize the loss -- divide by the batch size (default is 60)
+        total_loss = (base_loss + message_reg) / int(batch.batch[-1]+1)
+        
+      elif regularizer == 'bottleneck' or regularizer == 'standard':
+        total_loss = (model.loss(batch)) / int(batch.batch[-1]+1)
+        base_loss = total_loss  # No regularization
 
-      # Calculate the loss
-      base_loss, message_reg = loss_function(model=model,graph=batch,edge_index=edge_indices, n=n, batch_size=batch_size, regularizer='l1')
-
-
-      # Normalize the loss -- divide by the batch size (default is 60)
-      total_loss = (base_loss + message_reg) / int(batch.batch[-1]+1)
-
-      #Backpropagation algorithm to calculate the gradient of loss w.r.t. all model parameters
+      # Backpropagation algorithm to calculate the gradient of loss w.r.t. all model parameters
       total_loss.backward()
 
       # Step the optimizer
@@ -185,16 +210,29 @@ for epoch in tqdm(range(epochs)):
 
 
 
-  print(cum_loss/(batch_size*5000))   #Averaging over the epoch
+  print(cum_loss/(train_batch_size*5000))   #Averaging over the epoch
   print("__________________")
   
   # After each epoch get the learned messages of the trained model on a unseen test data
-  current_message = get_messages(model,test_loader,dim=dim,msg_dim=100)
+  current_message = get_messages(model,test_loader,msg_dim=message_dim,dim=dim)
   
   # Adding epoch and loss information
   current_message['epoch'] = epoch
-  current_message['loss'] = cum_loss/(batch_size*5000)
-  messages_over_time.append(current_message)
+  current_message['loss'] = cum_loss/(train_batch_size*5000)
+  messages_over_time.append(current_message)    # Record the messages over each epoch
+  
+  # Calculate the test loss after each epoch
+  for test_batch in test_loader:
+    test_batch.x = test_batch.x.to(device)
+    test_batch.y = test_batch.y.to(device)
+    test_batch.edge_index = test_batch.edge_index.to(device)
+    test_batch.batch = test_batch.batch.to(device)
+    test_loss += model.loss(test_batch).item()/int(test_batch.batch[-1]+1)
+  test_loss = test_loss/(len(test_loader)*test_batch_size)
+  print("Test Loss: ", test_loss)
+  current_message['test_loss'] = test_loss
+  # Set the test loss to zero for the next epoch
+  test_loss = 0.0
   
   
   
