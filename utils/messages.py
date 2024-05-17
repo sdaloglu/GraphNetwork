@@ -11,7 +11,7 @@ import torch
 
 # Define a function to extract the messages from the model
 
-def get_messages(model, test_loader, dim = 2, msg_dim = 100):
+def get_messages(model, test_loader, msg_dim, dim = 2):
     """
     Args:
         model (torch.nn.Module): The model to extract the messages from
@@ -49,6 +49,7 @@ def get_messages(model, test_loader, dim = 2, msg_dim = 100):
             columns += ['e%d'%(k,) for k in range(msg_dim)]
 
         
+        # List of messages -- Pandas dataframe
         messages.append(pd.DataFrame(
             data=message_with_node_features.cpu().detach().numpy(),
             columns=columns
