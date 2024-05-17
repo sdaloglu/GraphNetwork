@@ -73,11 +73,20 @@ class GN(MessagePassing):
         return self.propagate(edge_index, x = x, size = (x.size(0),x.size(0)))
     
     def loss(self, graph):
-        x = graph.x
-        edge_index = graph.edge_index
+  
         # Compare the ground truth acceleration with the predicted acceleration (output of the node model)
         # Using MAE as the loss function
-        return torch.sum(torch.abs(graph.y - self.forward(graph.x, graph.edge_index)))
+        
+        y = graph.y
+        x = graph.x
+        edge_index = graph.edge_index
+        
+        # Ensure tensors are on the correct device
+        y = y.to(next(self.parameters()).device)
+        x = x.to(next(self.parameters()).device)
+        edge_index = edge_index.to(next(self.parameters()).device)
+        
+        return torch.sum(torch.abs(y - self.forward(x, edge_index)))
      
     
 def edge_index(n):
