@@ -5,7 +5,7 @@ from torch.nn import ReLU
 
 class GN(MessagePassing):
     # Using the MessagePassing base class from PyTorch Geometric
-    def __init__(self, edge_index, input_dim=6, message_dim=100, output_dim=2, hidden_units = 100, aggregation = 'add'):
+    def __init__(self, edge_index, message_dim, input_dim=6, output_dim=2, hidden_units = 100, aggregation = 'add'):
        
         # Specify the aggregation method from the temporary object of the superclass
         super(GN,self).__init__(aggr = aggregation)   # Adding forces as an inductive bias of the GN model
@@ -126,13 +126,22 @@ def loss_function(model, graph, edge_index, n, batch_size, regularizer = 'l1'):
         
         message = model.message(target_node, source_node)
         message_reg = alpha * torch.sum(torch.abs(message)) * batch_size
-        message_reg = message_reg / (n*(n-1)/2)  # Normalizing the regularizer by dividing by the number of edges
+        message_reg = message_reg / (n*(n-1))  # Normalizing the regularizer by dividing by the number of edges times 2 (edge_index is directed)
         return base_loss, message_reg
     
     elif regularizer == 'kl':
         alpha = 1.0
         
+        message = model.message(target_node, source_node)    # Message tensor of shape [num_edges, message_dim]
+        
+        # Calculate the KL divergence of the message distribution
+        
+        mu = torch.mean(message, dim = 0)
+        sigma = torch.std(message, dim = 0)
+        
+        
+        
         # Add the KL divergence term to the loss
         
         return 0 
-        
+    
