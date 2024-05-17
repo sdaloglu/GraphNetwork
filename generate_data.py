@@ -72,7 +72,7 @@ sim_sets = [
 #Select the hand-tuned dt value for a smooth simulation
 # (since scales are different in each potential):
 dt = [ss['dt'][0] for ss in sim_sets if ss['sim'] == sim][0]
-title = '{}_n={}_dim={}_nt={}_dt={}'.format(sim, n_particles, dim, nt, dt)
+title = '{}_n={}_dim={}'.format(sim, n_particles, dim)
 
 s = SimulationDataset(sim, n=n_particles, dim=dim, nt=nt//2, dt=dt)
 # Update this to your own dataset, or regenerate:
@@ -88,8 +88,10 @@ s.data.shape
 # Create a new directory called data if it does not exist and save the data
 if not os.path.exists('data'):
   os.mkdir('data')
-np.save('data/spring_sim_4_particles_data.npy', data)
-np.save('data/spring_sim_4_particles_acc.npy', s.get_acceleration())
+  
+# Save the data to a file named after the simulation
+np.save('data/{}_data.npy'.format(title), data)
+np.save('data/{}_acc.npy'.format(title), s.get_acceleration())
   
   
   
