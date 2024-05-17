@@ -15,10 +15,10 @@ import pickle as pkl
 from generate_data import n_particles
 
 # Open the simulated data from the data directory
-title_spring = 'data/spring_n=4_dim=2_data.npy'
-title_r1 = 'data/r1_n=4_dim=2_data.npy'
-title_r2 = 'data/r2_n=4_dim=2_data.npy'
-title_charge = 'data/charge_n=4_dim=2_data.npy'
+title_spring = 'spring_n=4_dim=2'
+title_r1 = 'r1_n=4_dim=2'
+title_r2 = 'r2_n=4_dim=2'
+title_charge = 'charge_n=4_dim=2_'
 
 
 # Choose the title of the simulation
@@ -188,7 +188,7 @@ for epoch in tqdm(range(epochs)):
       if regularizer == 'l1' or regularizer == 'kl':
         
         # Calculate the loss
-        base_loss, message_reg = loss_function(model=model,graph=batch,edge_index=edge_indices, n=n, batch_size=batch_size, regularizer=regularizer)
+        base_loss, message_reg = loss_function(model=model,graph=batch,edge_index=edge_indices, n=n, batch_size=train_batch_size, regularizer=regularizer)
         # Normalize the loss -- divide by the batch size (default is 60)
         total_loss = (base_loss + message_reg) / int(batch.batch[-1]+1)
         
@@ -222,6 +222,10 @@ for epoch in tqdm(range(epochs)):
   messages_over_time.append(current_message)    # Record the messages over each epoch
   
   # Calculate the test loss after each epoch
+  # Set the test loss to zero for the next epoch (begining of an epoch)
+  test_loss = 0.0
+  test_loss = test_loss.to(device)
+  
   for test_batch in test_loader:
     test_batch.x = test_batch.x.to(device)
     test_batch.y = test_batch.y.to(device)
@@ -231,8 +235,7 @@ for epoch in tqdm(range(epochs)):
   test_loss = test_loss/(len(test_loader)*test_batch_size)
   print("Test Loss: ", test_loss)
   current_message['test_loss'] = test_loss
-  # Set the test loss to zero for the next epoch
-  test_loss = 0.0
+  
   
   
   
