@@ -121,7 +121,7 @@ train_loader = DataLoader(train_data, batch_size=train_batch_size, shuffle=True)
 # This time we shuffle by creating random indices, since there is only one batch
 
 np.random.seed(42)
-test_indices = np.random.randint(0,len(X_test),1000)  # Sample 1000 random data
+test_indices = np.random.randint(0,len(X_test),200000)  # Sample 200,000 random data
 test_data = []
 for i in test_indices:
   # Create a graph data type
@@ -129,12 +129,12 @@ for i in test_indices:
   test_data.append(data)
 
 # Create a loader to batch from the test_data, batch size is larger since no gradient calculation is required for evalution
-test_batch_size = 1000
+test_batch_size = 200
 test_loader =  DataLoader(test_data, batch_size=test_batch_size, shuffle=False)
 
 # len(X_test) = 200,000. --> Number of testing data points
-# len(test_data) = 1,000. --> Number of testing data points chosen randomly
-# len(test_loader) = 1 --> Number of batches = [total data points]/[batch size]
+# len(test_data) = 200,000. --> Number of testing data points chosen randomly
+# len(test_loader) = 1000 --> Number of batches = [total data points]/[batch size]
 
 
 
@@ -146,7 +146,7 @@ test_loader =  DataLoader(test_data, batch_size=test_batch_size, shuffle=False)
 
 
 # Define epochs
-epochs = 30
+epochs = 20
 
 # set a learning rate but should adjust it to decaying learning schedule (higher to lower)
 learning_rate = 0.001
@@ -224,16 +224,19 @@ for epoch in tqdm(range(epochs)):
   # Calculate the test loss after each epoch
   # Set the test loss to zero for the next epoch (begining of an epoch)
   test_loss = 0.0
-  test_loss = test_loss.to(device)
+
   
-  for test_batch in test_loader:
-    test_batch.x = test_batch.x.to(device)
-    test_batch.y = test_batch.y.to(device)
-    test_batch.edge_index = test_batch.edge_index.to(device)
-    test_batch.batch = test_batch.batch.to(device)
-    test_loss += model.loss(test_batch).item()/int(test_batch.batch[-1]+1)
+  for test_batch in test_loader:    # We need mutliple batches per epoch to plot y=x
+    test_batch = test_batch.to(device)
+    
+    # Compute loss
+    loss = model.loss(test_batch).item()
+    test_loss += loss 
+    
   test_loss = test_loss/(len(test_loader)*test_batch_size)
   print("Test Loss: ", test_loss)
+  
+  # Update current_message dictionary
   current_message['test_loss'] = test_loss
   
   
