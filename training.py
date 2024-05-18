@@ -146,7 +146,7 @@ test_loader =  DataLoader(test_data, batch_size=test_batch_size, shuffle=False)
 
 
 # Define epochs
-epochs = 50
+epochs = 20
 
 # set a learning rate but should adjust it to decaying learning schedule (higher to lower)
 learning_rate = 0.001
@@ -207,10 +207,22 @@ for epoch in tqdm(range(epochs)):
 
       # Calculate the cumulative loss for the batch
       cum_loss += base_loss.item()
+      
+  print("__________________")
+  train_loss = cum_loss/(train_batch_size*5000)
+  print("Train Loss: ",train_loss)   #Averaging over the epoch
 
-
-
-  print(cum_loss/(train_batch_size*5000))   #Averaging over the epoch
+  # Set the test loss to zero for the next epoch (beginning of an epoch)
+  test_loss = 0.0
+  for test_batch in test_loader:    # We need mutliple batches per epoch to plot y=x
+    test_batch = test_batch.to(device)
+    
+    # Calculate the test loss after each epoch
+    loss = model.loss(test_batch).item()
+    test_loss += loss 
+    
+  test_loss = test_loss/(len(test_loader)*test_batch_size) #Averaging over the epoch
+  print("Test Loss: ", test_loss)
   print("__________________")
   
   # After each epoch get the learned messages of the trained model on a unseen test data
@@ -218,29 +230,13 @@ for epoch in tqdm(range(epochs)):
   
   # Adding epoch and loss information
   current_message['epoch'] = epoch
-  current_message['loss'] = cum_loss/(train_batch_size*5000)
+  current_message['train_loss'] = train_loss
+  current_message['test_loss'] = test_loss
   messages_over_time.append(current_message)    # Record the messages over each epoch
   
-  # Calculate the test loss after each epoch
-  # Set the test loss to zero for the next epoch (begining of an epoch)
-  test_loss = 0.0
+  
+ 
 
-  
-  for test_batch in test_loader:    # We need mutliple batches per epoch to plot y=x
-    test_batch = test_batch.to(device)
-    
-    # Compute loss
-    loss = model.loss(test_batch).item()
-    test_loss += loss 
-    
-  test_loss = test_loss/(len(test_loader)*test_batch_size)
-  print("Test Loss: ", test_loss)
-  
-  # Update current_message dictionary
-  current_message['test_loss'] = test_loss
-  
-  
-  
   
 
 
