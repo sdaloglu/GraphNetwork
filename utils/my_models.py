@@ -82,9 +82,9 @@ class GN(MessagePassing):
         edge_index = graph.edge_index
         
         # Ensure tensors are on the correct device
-        y = y.to(next(self.parameters()).device)
-        x = x.to(next(self.parameters()).device)
-        edge_index = edge_index.to(next(self.parameters()).device)
+        #y = y.to(next(self.parameters()).device)
+        #x = x.to(next(self.parameters()).device)
+        #edge_index = edge_index.to(next(self.parameters()).device)
         
         return torch.sum(torch.abs(y - self.forward(x, edge_index)))
      
