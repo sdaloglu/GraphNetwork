@@ -105,7 +105,7 @@ train_batch_size = 60
 train_data = []
 for i in range(len(X_train)):
   # Create a graph data type
-  data = Data(x = X_train[i], edge_index=edge_indices, y =y_train[i])
+  data = Data(x = X_train[i].requires_grad_(True), edge_index=edge_indices, y =y_train[i].requires_grad_(True))
   train_data.append(data)
 
 # Create a loader to batch from the train_data
@@ -154,8 +154,11 @@ learning_rate = 0.001
 # Define the optimizer and specify which parameters should be updated during the training process
 optimizer = torch.optim.Adam(params=model.parameters(),lr=learning_rate, weight_decay=1e-8)    # This also includes the weight regularization
 
+# batch_per_epoch = len(train_loader)
+batch_per_epoch = 5000    # Limiting the number of batches to 5000 per epoch
+
 # Define learning rate scheduler (start with low rate, gradually increasing to max, then lower than the initial learning rate)
-scheduler = OneCycleLR(optimizer, max_lr=0.001, steps_per_epoch=len(train_loader) , epochs=epochs, final_div_factor=1e5)
+scheduler = OneCycleLR(optimizer, max_lr=0.001, steps_per_epoch=batch_per_epoch , epochs=epochs, final_div_factor=1e5)
 
 # Define an empty array for the messages
 messages_over_time = []
@@ -171,9 +174,9 @@ for epoch in tqdm(range(epochs)):
   
 
   i = 0
-  while i< 5000:    # Limiting the number of batches to 5000 per epoch
+  while i< batch_per_epoch:    # Limiting the number of batches to 5000 per epoch
     for batch in train_loader:
-      if i >= 5000:
+      if i >= batch_per_epoch:
                 break
       i += 1
       # Move the batch of data to GPU
@@ -209,7 +212,7 @@ for epoch in tqdm(range(epochs)):
       cum_loss += base_loss.item()
       
   print("__________________")
-  train_loss = cum_loss/(train_batch_size*5000)
+  train_loss = cum_loss/(train_batch_size*batch_per_epoch)
   print("Train Loss: ",train_loss)   #Averaging over the epoch
 
   # Set the test loss to zero for the next epoch (beginning of an epoch)
