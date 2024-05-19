@@ -12,7 +12,11 @@ from my_models import loss_function, edge_index, GN
 from messages import get_messages
 from copy import deepcopy as copy
 import pickle as pkl
-from generate_data import n_particles
+
+
+
+# Number of nodes
+n_particles = 4
 
 # Open the simulated data from the data directory
 title_spring = 'spring_n=4_dim=2'
