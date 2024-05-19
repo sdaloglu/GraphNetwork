@@ -218,7 +218,7 @@ for epoch in tqdm(range(epochs)):
   # Set the test loss to zero for the next epoch (beginning of an epoch)
   test_loss = 0.0
   for test_batch in test_loader:    # We need mutliple batches per epoch to plot y=x
-    test_batch = test_batch.to(device)
+    test_batch = test_batch.to(device)  # Move the test_batch to GPU
     
     # Calculate the test loss after each epoch
     loss = model.loss(test_batch).item()
