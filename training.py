@@ -125,7 +125,7 @@ train_loader = DataLoader(train_data, batch_size=train_batch_size, shuffle=True)
 # This time we shuffle by creating random indices, since there is only one batch
 
 np.random.seed(42)
-test_indices = np.random.randint(0,len(X_test),200000)  # Sample 200,000 random data
+test_indices = np.random.randint(0,len(X_test),1000)  # Sample 1,000 random data
 test_data = []
 for i in test_indices:
   # Create a graph data type
@@ -133,12 +133,12 @@ for i in test_indices:
   test_data.append(data)
 
 # Create a loader to batch from the test_data, batch size is larger since no gradient calculation is required for evalution
-test_batch_size = 200
+test_batch_size = 1000
 test_loader =  DataLoader(test_data, batch_size=test_batch_size, shuffle=False)
 
 # len(X_test) = 200,000. --> Number of testing data points
-# len(test_data) = 200,000. --> Number of testing data points chosen randomly
-# len(test_loader) = 1000 --> Number of batches = [total data points]/[batch size]
+# len(test_data) = 1,000. --> Number of testing data points chosen randomly
+# len(test_loader) = 1 --> Number of batches = [total data points]/[batch size]
 
 
 
