@@ -12,4 +12,4 @@ __pycache__/
 slurm*
 
 # Ignore the models directory
-models/
+# models/
