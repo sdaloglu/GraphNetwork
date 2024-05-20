@@ -195,7 +195,7 @@ for epoch in tqdm(range(epochs)):
       if regularizer == 'l1' or regularizer == 'kl':
         
         # Calculate the loss
-        base_loss, message_reg = loss_function(model=model,graph=batch,edge_index=edge_indices, n=n, batch_size=train_batch_size, regularizer=regularizer)
+        base_loss, message_reg = loss_function(model=model,graph=batch, n=n, batch_size=train_batch_size, regularizer=regularizer)
         # Normalize the loss -- divide by the batch size (default is 60)
         total_loss = (base_loss + message_reg) / int(batch.batch[-1]+1)
         
