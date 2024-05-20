@@ -57,11 +57,12 @@ def get_messages(model, test_loader, msg_dim, dim = 2):
         
     messages = pd.concat(messages)
     
-    # Adding the extra information to the messages dataframe --> delta x and delta y
+    # Adding the extra information to the messages dataframe --> delta x and delta y and r
+    # These information are used for calculating the true force
     messages['dx'] = messages.x2 - messages.x1
     messages['dy'] = messages.y2 - messages.y1
     
-    if dim == 2:
+    if dim == 2:    
         messages['r'] = np.sqrt(
             (messages.dx)**2 + (messages.dy)**2
         )
