@@ -101,7 +101,7 @@ class GN(MessagePassing):
         x = graph.x    # Node features of the batch
         edge_index = graph.edge_index    # Connectivity matrix of the batch
         
-        return self.forward(edge_index, x=x, size = (x.size(0), x.size(0)))
+        return self.propagate(edge_index, x=x, size = (x.size(0), x.size(0)))
         
     
     def loss(self, graph):
@@ -173,16 +173,18 @@ def loss_function(model, graph, n, batch_size, regularizer = 'l1'):
     elif regularizer == 'kl':
         alpha = 1.0
         
-        message = model.message(target_node, source_node)    # Message tensor of shape [num_edges, message_dim]
+        message = model.message(torch.cat(target_node, source_node), dim=1)    # Message tensor of shape [num_edges, message_dim]
         
         # Calculate the KL divergence of the message distribution
         
-        mu = torch.mean(message, dim = 0)
-        sigma = torch.std(message, dim = 0)
+        mu = message[:,:100]    # Take the first half of the features as the mean of the message distribution
+        log_var = message[:,100:]   # Take the second half of the features as the log variance of the message distribution
         
+        kl_reg = alpha * torch.sum(0.5 * (mu**2 + torch.exp(log_var) - log_var - 1)) * batch_size
+        kl_reg = kl_reg / (n*(n-1))    # Normalizing the regularizer by dividing by the number of edges times 2 (edge_index is directed)
         
-        
-        # Add the KL divergence term to the loss
-        
-        return 0 
+        return base_loss, kl_reg
+    
+    else:
+        return base_loss
     
