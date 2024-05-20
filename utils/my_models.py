@@ -5,11 +5,13 @@ from torch.nn import ReLU
 
 class GN(MessagePassing):
     # Using the MessagePassing base class from PyTorch Geometric
-    def __init__(self, edge_index, message_dim, input_dim=6, output_dim=2, hidden_units = 100, aggregation = 'add'):
+    def __init__(self, edge_index, message_dim, input_dim=6, output_dim=2, hidden_units = 300, aggregation = 'add'):
        
         # Specify the aggregation method from the temporary object of the superclass
         super(GN,self).__init__(aggr = aggregation)   # Adding forces as an inductive bias of the GN model
         self.edge_index = edge_index
+        self.message_dim = message_dim
+        
         
         self.edge_model = nn.Sequential( 
             # Edge model aiming to learn the true force
@@ -36,12 +38,24 @@ class GN(MessagePassing):
             
         )
         
-    
+
+        
     def message(self, x_i, x_j):
         # Compute messages from the source node to target node
         # the message function takes an input of the concatenation of the features of the two nodes
-        return self.edge_model(torch.cat([x_i, x_j], dim = 1))
         
+        message = self.edge_model(torch.cat([x_i, x_j], dim = 1))
+        
+        if message_dim == 100:    # This is when we use L1 regularization, message function is normal
+            return message
+        
+        elif message_dim == 200:    # This is when we use KL regularization, message function returns the mean of the predicted distributions
+            
+            # Take the first half of the features as the mean and the second half as the variance
+            mean = message[:,:100]
+            log_variance = message[:,100:]
+        return mean
+                
         
     # The default aggregate function is used from the superclass (summing the messages)
     
@@ -56,7 +70,7 @@ class GN(MessagePassing):
         
         return self.node_model(torch.cat([aggr_out, x], dim = 1))
         
-        
+
     def forward(self, x, edge_index):
         """
         Args:
@@ -69,8 +83,26 @@ class GN(MessagePassing):
         # forward pass of the neural network
         # Calling propagate() will in turn call message(), aggregate(), and update()
         # size argument is optional and can be used to specify the dimensions of the source and target node feature matrices
-     
+
         return self.propagate(edge_index, x = x, size = (x.size(0),x.size(0)))
+ 
+ 
+    def batch_forward(self, graph):
+        """_summary_ This function is used to perform a forward pass on a batch of graphs.
+        This is different from forward function because edge_index and node features are found for the entire batch.
+        
+        Args:
+            graph (_type_): _description_
+
+        Returns:
+            _type_: _description_
+        """
+        
+        x = graph.x    # Node features of the batch
+        edge_index = graph.edge_index    # Connectivity matrix of the batch
+        
+        return self.forward(edge_index, x=x, size = (x.size(0), x.size(0)))
+        
     
     def loss(self, graph):
   
@@ -82,7 +114,24 @@ class GN(MessagePassing):
         edge_index = graph.edge_index
         
         return torch.sum(torch.abs(y - self.forward(x, edge_index)))
-     
+    
+    
+class KLGN(MessagePassing):
+    """_summary_: This is a class of GN that is used for KL regularization.
+    The KL model is a variational version of the GN implementation above, modeling the messages as distributions.
+    The edge model output should have twice as many features as it is predicting the mean and variance.
+
+    """
+    
+    def __init__(self, edge_index, message_dim, input_dim=6, output_dim=2, hidden_units = 100, aggregation = 'add')
+    
+    
+    
+    
+    
+    
+    
+    
     
 def edge_index(n):
     """
@@ -109,7 +158,7 @@ def edge_index(n):
     return edge_index
 
 
-def loss_function(model, graph, edge_index, n, batch_size, regularizer = 'l1'):
+def loss_function(model, graph, n, batch_size, regularizer = 'l1'):
     """
     Loss function for the Graph Neural Network
     
