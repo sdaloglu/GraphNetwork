@@ -113,19 +113,7 @@ class GN(MessagePassing):
         x = graph.x
         edge_index = graph.edge_index
         
-        return torch.sum(torch.abs(y - self.forward(x, edge_index)))
-    
-    
-class KLGN(MessagePassing):
-    """_summary_: This is a class of GN that is used for KL regularization.
-    The KL model is a variational version of the GN implementation above, modeling the messages as distributions.
-    The edge model output should have twice as many features as it is predicting the mean and variance.
-
-    """
-    
-    def __init__(self, edge_index, message_dim, input_dim=6, output_dim=2, hidden_units = 100, aggregation = 'add')
-    
-    
+        return torch.sum(torch.abs(y - self.batch_forward(graph)))
     
     
     
