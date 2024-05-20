@@ -46,15 +46,15 @@ class GN(MessagePassing):
         
         message = self.edge_model(torch.cat([x_i, x_j], dim = 1))
         
-        if message_dim == 100:    # This is when we use L1 regularization, message function is normal
+        if self.message_dim == 100:    # This is when we use L1 regularization, message function is normal
             return message
         
-        elif message_dim == 200:    # This is when we use KL regularization, message function returns the mean of the predicted distributions
+        elif self.message_dim == 200:    # This is when we use KL regularization, message function returns the mean of the predicted distributions
             
             # Take the first half of the features as the mean and the second half as the variance
             mean = message[:,:100]
             log_variance = message[:,100:]
-        return mean
+            return mean
                 
         
     # The default aggregate function is used from the superclass (summing the messages)
