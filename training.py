@@ -150,7 +150,7 @@ test_loader =  DataLoader(test_data, batch_size=test_batch_size, shuffle=False)
 
 
 # Define epochs
-epochs = 20
+epochs = 30
 
 # set a learning rate but should adjust it to decaying learning schedule (higher to lower)
 learning_rate = 0.001
