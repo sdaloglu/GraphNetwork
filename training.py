@@ -89,7 +89,7 @@ edge_indices = edge_indices.to(device)
 model = GN(input_dim=n_features, # 6 features
            message_dim=message_dim,   # Dimension of the latent space representation (hopefully force) -- 
            output_dim=dim,   # Dimension of the acceleration -- set by the choice of the physics simulation
-           hidden_units = 100,   # Intermediate latent space dimension during the forward pass.
+           hidden_units = 300,   # Intermediate latent space dimension during the forward pass.
            aggregation = 'add',
            edge_index=edge_indices)
 # Move to GPU
