@@ -9,9 +9,9 @@ class GN(MessagePassing):
        
         # Specify the aggregation method from the temporary object of the superclass
         super(GN,self).__init__(aggr = aggregation)   # Adding forces as an inductive bias of the GN model
-        self.edge_index = edge_index
+
         self.message_dim = message_dim
-        
+        self.edge_index = edge_index
         
         self.edge_model = nn.Sequential( 
             # Edge model aiming to learn the true force
@@ -85,35 +85,18 @@ class GN(MessagePassing):
         # size argument is optional and can be used to specify the dimensions of the source and target node feature matrices
 
         return self.propagate(edge_index, x = x, size = (x.size(0),x.size(0)))
- 
- 
-    def batch_forward(self, graph):
-        """_summary_ This function is used to perform a forward pass on a batch of graphs.
-        This is different from forward function because edge_index and node features are found for the entire batch.
-        
-        Args:
-            graph (_type_): _description_
-
-        Returns:
-            _type_: _description_
-        """
-        
-        x = graph.x    # Node features of the batch
-        edge_index = graph.edge_index    # Connectivity matrix of the batch
-        
-        return self.propagate(edge_index, x=x, size = (x.size(0), x.size(0)))
-        
+   
     
     def loss(self, graph):
   
         # Compare the ground truth acceleration with the predicted acceleration (output of the node model)
         # Using MAE as the loss function
         
-        y = graph.y
-        x = graph.x
-        edge_index = graph.edge_index
+        y = graph.y    # Output - acceleration matrix of the batch
+        x = graph.x    # Node feature matrix of the batch
+        edge_index = graph.edge_index    # Graph connectivity matrix of the batch
         
-        return torch.sum(torch.abs(y - self.batch_forward(graph)))
+        return torch.sum(torch.abs(y - self.forward(x, edge_index)))
     
     
     
@@ -159,8 +142,8 @@ def loss_function(model, graph, n, batch_size, regularizer = 'l1'):
     """
 
     base_loss = model.loss(graph)
-    source_node = graph.x[model.edge_index[0]]
-    target_node = graph.x[model.edge_index[1]]
+    source_node = graph.x[graph.edge_index[0]]
+    target_node = graph.x[graph.edge_index[1]]
         
     if regularizer == 'l1':
         alpha = 0.01
