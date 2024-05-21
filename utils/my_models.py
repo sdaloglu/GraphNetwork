@@ -156,7 +156,7 @@ def loss_function(model, graph, n, batch_size, regularizer = 'l1'):
     elif regularizer == 'kl':
         alpha = 1.0
         
-        message = model.message(torch.cat(target_node, source_node), dim=1)    # Message tensor of shape [num_edges, message_dim]
+        message = model.message(target_node, source_node)   # Message tensor of shape [num_edges, message_dim]
         
         # Calculate the KL divergence of the message distribution
         
