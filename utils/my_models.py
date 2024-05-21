@@ -159,8 +159,8 @@ def loss_function(model, graph, n, batch_size, regularizer = 'l1'):
     """
 
     base_loss = model.loss(graph)
-    source_node = graph.x[graph.edge_index[0]]
-    target_node = graph.x[graph.edge_index[1]]
+    source_node = graph.x[model.edge_index[0]]
+    target_node = graph.x[model.edge_index[1]]
         
     if regularizer == 'l1':
         alpha = 0.01
