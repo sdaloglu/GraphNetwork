@@ -89,7 +89,7 @@ edge_indices = edge_indices.to(device)
 model = GN(input_dim=n_features, # 6 features
            message_dim=message_dim,   # Dimension of the latent space representation (hopefully force) -- 
            output_dim=dim,   # Dimension of the acceleration -- set by the choice of the physics simulation
-           hidden_units = 300,   # Intermediate latent space dimension during the forward pass.
+           hidden_units = 100,   # Intermediate latent space dimension during the forward pass.
            aggregation = 'add',
            edge_index=edge_indices)
 # Move to GPU
@@ -150,7 +150,7 @@ test_loader =  DataLoader(test_data, batch_size=test_batch_size, shuffle=False)
 
 
 # Define epochs
-epochs = 30
+epochs = 20
 
 # set a learning rate but should adjust it to decaying learning schedule (higher to lower)
 learning_rate = 0.001
