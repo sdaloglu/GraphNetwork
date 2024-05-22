@@ -5,7 +5,7 @@ from torch.nn import ReLU
 
 class GN(MessagePassing):
     # Using the MessagePassing base class from PyTorch Geometric
-    def __init__(self, edge_index, message_dim, input_dim=6, output_dim=2, hidden_units = 300, aggregation = 'add'):
+    def __init__(self, edge_index, message_dim, input_dim=6, output_dim=2, hidden_units = 100, aggregation = 'add'):
        
         # Specify the aggregation method from the temporary object of the superclass
         super(GN,self).__init__(aggr = aggregation)   # Adding forces as an inductive bias of the GN model
@@ -92,11 +92,11 @@ class GN(MessagePassing):
         # Compare the ground truth acceleration with the predicted acceleration (output of the node model)
         # Using MAE as the loss function
         
-        y = graph.y    # Output - acceleration matrix of the batch
-        x = graph.x    # Node feature matrix of the batch
-        edge_index = graph.edge_index    # Graph connectivity matrix of the batch
+        output_batch = graph.y    # Output - acceleration matrix of the batch
+        node_batch = graph.x    # Node feature matrix of the batch
+        edge_indices = graph.edge_index    # Graph connectivity matrix of the batch
         
-        return torch.sum(torch.abs(y - self.forward(x, edge_index)))
+        return torch.sum(torch.abs(output_batch - self.forward(x = node_batch, edge_index = edge_indices )))
     
     
     
@@ -150,7 +150,7 @@ def loss_function(model, graph, n, batch_size, regularizer = 'l1'):
         
         message = model.message(target_node, source_node)
         message_reg = alpha * torch.sum(torch.abs(message)) * batch_size
-        message_reg = message_reg / (n*(n-1))  # Normalizing the regularizer by dividing by the number of edges times 2 (edge_index is directed)
+        message_reg = message_reg / (n*(n-1)) * n  # Normalizing the regularizer by dividing by the number of edges times 2 (edge_index is directed)
         return base_loss, message_reg
     
     elif regularizer == 'kl':
