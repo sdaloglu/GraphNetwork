@@ -22,7 +22,7 @@ def get_messages(model, test_loader, msg_dim, dim = 2):
     """
     
     # Move the model to the CPU
-    model.cpu()
+    #model.cpu()
     
     # Initialize an empty list to store the messages
     messages = []
@@ -30,10 +30,10 @@ def get_messages(model, test_loader, msg_dim, dim = 2):
     for batch in test_loader:
         
         # Extract the node features of the source nodes
-        x_source = batch.x[batch.edge_index[0]].cpu()    # We want the graph connectivity info for all graphs in the batch, hence the batch.edge_index[0]
+        x_source = batch.x[batch.edge_index[0]]   # We want the graph connectivity info for all graphs in the batch, hence the batch.edge_index[0]
         
         # Extract the node features of the target nodes
-        x_target = batch.x[batch.edge_index[1]].cpu()
+        x_target = batch.x[batch.edge_index[1]] 
         
         # Get the messages
         message = model.edge_model(torch.cat([x_source, x_target], dim = 1))
