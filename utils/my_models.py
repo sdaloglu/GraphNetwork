@@ -5,13 +5,13 @@ from torch.nn import ReLU
 
 class GN(MessagePassing):
     # Using the MessagePassing base class from PyTorch Geometric
-    def __init__(self, edge_index, message_dim, input_dim=6, output_dim=2, hidden_units = 100, aggregation = 'add'):
+    def __init__(self, message_dim, input_dim=6, output_dim=2, hidden_units = 100, aggregation = 'add', n_particles = 4):
        
         # Specify the aggregation method from the temporary object of the superclass
         super(GN,self).__init__(aggr = aggregation)   # Adding forces as an inductive bias of the GN model
 
         self.message_dim = message_dim
-        self.edge_index = edge_index
+        self.n_particles = n_particles
         
         self.edge_model = nn.Sequential( 
             # Edge model aiming to learn the true force
@@ -96,7 +96,7 @@ class GN(MessagePassing):
         node_batch = graph.x    # Node feature matrix of the batch
         edge_indices = graph.edge_index    # Graph connectivity matrix of the batch
         
-        return torch.sum(torch.abs(output_batch - self.forward(x = node_batch, edge_index = edge_indices )))
+        return torch.sum(torch.abs(output_batch - self.forward(x = node_batch, edge_index = edge_indices )))/self.n_particles
     
     
     
@@ -146,11 +146,11 @@ def loss_function(model, graph, n, batch_size, regularizer = 'l1'):
     target_node = graph.x[graph.edge_index[1]]
         
     if regularizer == 'l1':
-        alpha = 0.01
+        alpha = 0.5
         
         message = model.message(target_node, source_node)
-        message_reg = alpha * torch.sum(torch.abs(message)) * batch_size
-        message_reg = message_reg / (n*(n-1)) * n  # Normalizing the regularizer by dividing by the number of edges times 2 (edge_index is directed)
+        message_reg = alpha * torch.sum(torch.abs(message))
+        message_reg = message_reg / (n*(n-1))   # Normalizing the regularizer by dividing by the number of edges times 2 (edge_index is directed)
         return base_loss, message_reg
     
     elif regularizer == 'kl':
