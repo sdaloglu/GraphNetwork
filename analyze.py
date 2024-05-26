@@ -21,8 +21,8 @@ msg_dim = 100
 sim = 'spring'
 
 #Only turn on one of these:
-plot_force_components = False
-plot_sparsity = True
+plot_force_components = True
+plot_sparsity = False
 plot_rotation = False
 if plot_force_components:
     fig, ax = plt.subplots(1, dim, figsize=(4*dim, 4))
