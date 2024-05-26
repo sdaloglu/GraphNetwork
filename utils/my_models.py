@@ -94,9 +94,13 @@ class GN(MessagePassing):
         x = x
         if augmentation:
             # Perform data augmentation in training loop in real time
-            return 0
-        
-        
+            
+            # Generate random noise to add to the node features
+            # Make sure the noise is the same for each node feature to simulate system noise
+            noise = torch.randn(1, x.size(1)) * 0.1
+            noise = noise.repeat(x.size(0),1).to(x.device)
+            x = x + noise
+            
         return self.propagate(edge_index=edge_index, x = x, size = (x.size(0),x.size(0)))
    
     
@@ -141,7 +145,7 @@ def get_edge_index(n):
 
 
 
-def loss_function(model, graph, n, batch_size, regularizer = 'l1'):
+def loss_function(model, graph, n, batch_size, regularizer = 'l1', augmentation = False):
     """
     Loss function for the Graph Neural Network
     
@@ -153,7 +157,7 @@ def loss_function(model, graph, n, batch_size, regularizer = 'l1'):
         _type_: _description_
     """
 
-    base_loss = model.loss(graph)
+    base_loss = model.loss(graph, augmentation = augmentation)
     source_node = graph.x[graph.edge_index[0]]
     target_node = graph.x[graph.edge_index[1]]
         
