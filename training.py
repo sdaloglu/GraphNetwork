@@ -192,12 +192,12 @@ for epoch in tqdm(range(epochs)):
       if regularizer == 'l1' or regularizer == 'kl':
         
         # Calculate the loss
-        base_loss, message_reg = loss_function(model=model,graph=batch, n=n, batch_size=train_batch_size, regularizer=regularizer)
+        base_loss, message_reg = loss_function(model=model,graph=batch, n=n, batch_size=train_batch_size, regularizer=regularizer, augmentation = True)
         # Normalize the loss -- divide by the batch size (default is 60)
         total_loss = base_loss + message_reg
         
       elif regularizer == 'bottleneck' or regularizer == 'standard':
-        total_loss = model.loss(batch)
+        total_loss = model.loss(batch, augmentation=True)
         base_loss = total_loss  # No regularization
 
       # Backpropagation algorithm to calculate the gradient of loss w.r.t. all model parameters
@@ -222,7 +222,7 @@ for epoch in tqdm(range(epochs)):
     test_batch = test_batch.to(device)  # Move the test_batch to GPU
     
     # Calculate the test loss after each epoch
-    loss = model.loss(test_batch).item()
+    loss = model.loss(test_batch, augmentation = False).item()
     test_loss += loss 
     
   test_loss = test_loss/(len(test_loader)) #Averaging over the epoch
