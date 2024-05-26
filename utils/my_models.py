@@ -2,16 +2,16 @@ import torch
 import torch.nn as nn
 from torch_geometric.nn import MessagePassing    # Message Passing Graph Neural Network (what we are using)
 from torch.nn import ReLU
+from torch_geometric.nn import aggr
 
 class GN(MessagePassing):
     # Using the MessagePassing base class from PyTorch Geometric
-    def __init__(self, message_dim, input_dim=6, output_dim=2, hidden_units = 100, aggregation = 'add', n_particles = 4):
+    def __init__(self, message_dim, input_dim=6, output_dim=2, hidden_units = 100, aggregation = 'add'):
        
         # Specify the aggregation method from the temporary object of the superclass
         super(GN,self).__init__(aggr = aggregation)   # Adding forces as an inductive bias of the GN model
 
         self.message_dim = message_dim
-        self.n_particles = n_particles
         
         self.edge_model = nn.Sequential( 
             # Edge model aiming to learn the true force
@@ -41,9 +41,8 @@ class GN(MessagePassing):
 
         
     def message(self, x_i, x_j):
-        # Compute messages from the source node to target node
-        # the message function takes an input of the concatenation of the features of the two nodes
         
+        # Compute messages from the source node to target node
         message = self.edge_model(torch.cat([x_i, x_j], dim = 1))
         
         if self.message_dim == 100:    # This is when we use L1 regularization, message function is normal
@@ -54,9 +53,13 @@ class GN(MessagePassing):
             # Take the first half of the features as the mean and the second half as the variance
             mean = message[:,:100]
             log_variance = message[:,100:]
-            return mean
+            message = mean
+            return message
+        else:
+            raise ValueError("Message dimension has to be 100 or 200. Invalid dimensions is assigned")
                 
-        
+    
+
     # The default aggregate function is used from the superclass (summing the messages)
     
     def update(self, aggr_out, x):
@@ -67,6 +70,10 @@ class GN(MessagePassing):
         Returns:
             _type_: _description_
         """
+        # aggr_ouput is the added message outputs for each node, thus has the shape [n_particles, message_dim]
+        
+        if aggr_out.size(0) != x.size(0):    # This should correspond to the number of nodes in the batch
+            raise ValueError("Number of rows in the aggregated message and node feature matrix are not the same")
         
         return self.node_model(torch.cat([aggr_out, x], dim = 1))
         
@@ -84,7 +91,9 @@ class GN(MessagePassing):
         # Calling propagate() will in turn call message(), aggregate(), and update()
         # size argument is optional and can be used to specify the dimensions of the source and target node feature matrices
 
-        return self.propagate(edge_index, x = x, size = (x.size(0),x.size(0)))
+        
+        
+        return self.propagate(edge_index=edge_index, x = x, size = (x.size(0),x.size(0)))
    
     
     def loss(self, graph):
@@ -92,19 +101,17 @@ class GN(MessagePassing):
         # Compare the ground truth acceleration with the predicted acceleration (output of the node model)
         # Using MAE as the loss function
         
-        output_batch = graph.y    # Output - acceleration matrix of the batch
-        node_batch = graph.x    # Node feature matrix of the batch
-        edge_indices = graph.edge_index    # Graph connectivity matrix of the batch
+        x = graph.x    # Node feature matrix of the batch
+        edge_index = graph.edge_index    # Graph connectivity matrix of the batch
+        y = graph.y    # Output - acceleration matrix of the batch
         
-        return torch.sum(torch.abs(output_batch - self.forward(x = node_batch, edge_index = edge_indices )))/self.n_particles
+        
+        return torch.sum(torch.abs(y - self.forward(x, edge_index)))/y.shape[0]    # Normalize by dividing the loss by the number of nodes in the batch
     
     
     
     
-    
-    
-    
-def edge_index(n):
+def get_edge_index(n):
     """
     Creating an adjacency tensor for a fully connected graph with n nodes
     
@@ -129,6 +136,7 @@ def edge_index(n):
     return edge_index
 
 
+
 def loss_function(model, graph, n, batch_size, regularizer = 'l1'):
     """
     Loss function for the Graph Neural Network
@@ -146,11 +154,12 @@ def loss_function(model, graph, n, batch_size, regularizer = 'l1'):
     target_node = graph.x[graph.edge_index[1]]
         
     if regularizer == 'l1':
-        alpha = 0.5
+        alpha = 1e-2   
         
         message = model.message(target_node, source_node)
-        message_reg = alpha * torch.sum(torch.abs(message))
-        message_reg = message_reg / (n*(n-1))   # Normalizing the regularizer by dividing by the number of edges times 2 (edge_index is directed)
+        
+        message_reg = alpha * torch.sum(torch.abs(message))    # Multiply by the regularizer coefficient
+        message_reg = message_reg / message.shape[0]  # Normalizing the regularizer by the number of edges in the batch
         return base_loss, message_reg
     
     elif regularizer == 'kl':
