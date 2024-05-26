@@ -78,7 +78,7 @@ class GN(MessagePassing):
         return self.node_model(torch.cat([aggr_out, x], dim = 1))
         
 
-    def forward(self, x, edge_index):
+    def forward(self, x, edge_index, augmentation = False):
         """
         Args:
             x (_type_): node features
@@ -91,12 +91,16 @@ class GN(MessagePassing):
         # Calling propagate() will in turn call message(), aggregate(), and update()
         # size argument is optional and can be used to specify the dimensions of the source and target node feature matrices
 
+        x = x
+        if augmentation:
+            # Perform data augmentation in training loop in real time
+            return 0
         
         
         return self.propagate(edge_index=edge_index, x = x, size = (x.size(0),x.size(0)))
    
     
-    def loss(self, graph):
+    def loss(self, graph, augmentation = False):
   
         # Compare the ground truth acceleration with the predicted acceleration (output of the node model)
         # Using MAE as the loss function
@@ -106,7 +110,7 @@ class GN(MessagePassing):
         y = graph.y    # Output - acceleration matrix of the batch
         
         
-        return torch.sum(torch.abs(y - self.forward(x, edge_index)))/y.shape[0]    # Normalize by dividing the loss by the number of nodes in the batch
+        return torch.sum(torch.abs(y - self.forward(x, edge_index, augmentation)))/y.shape[0]    # Normalize by dividing the loss by the number of nodes in the batch
     
     
     
