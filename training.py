@@ -8,7 +8,7 @@ from torch.optim.lr_scheduler import ReduceLROnPlateau, OneCycleLR
 from tqdm import tqdm
 import sys
 sys.path.append('utils')    # Add the utils directory to the path
-from my_models import loss_function, edge_index, GN
+from my_models import loss_function, get_edge_index, GN
 from messages import get_messages
 from copy import deepcopy as copy
 import pickle as pkl
@@ -81,7 +81,7 @@ elif regularizer == 'bottleneck':
   message_dim = dim    # Dimension of the true force
 
 # Get the edge index matrix
-edge_indices = edge_index(n)
+edge_indices = get_edge_index(n)
 # Move to GPU
 edge_indices = edge_indices.to(device)
 
@@ -90,8 +90,7 @@ model = GN(input_dim=n_features, # 6 features
            message_dim=message_dim,   # Dimension of the latent space representation (hopefully force) -- 
            output_dim=dim,   # Dimension of the acceleration -- set by the choice of the physics simulation
            hidden_units = 100,   # Intermediate latent space dimension during the forward pass.
-           aggregation = 'add',
-           n_particles=n_particles)
+           aggregation = 'add')
 # Move to GPU
 model = model.to(device)
 
@@ -150,7 +149,7 @@ test_loader =  DataLoader(test_data, batch_size=test_batch_size, shuffle=False)
 
 
 # Define epochs
-epochs = 30
+epochs = 20
 
 # set a learning rate but should adjust it to decaying learning schedule (higher to lower)
 learning_rate = 0.001
@@ -184,10 +183,8 @@ for epoch in tqdm(range(epochs)):
                 break
       i += 1
       # Move the batch of data to GPU
-      batch.x = batch.x.to(device)
-      batch.y = batch.y.to(device)
-      batch.edge_index = batch.edge_index.to(device)
-      batch.batch = batch.batch.to(device)
+      batch = batch.to(device)
+ 
 
       # Backward pass and optimize
       optimizer.zero_grad()
@@ -197,10 +194,10 @@ for epoch in tqdm(range(epochs)):
         # Calculate the loss
         base_loss, message_reg = loss_function(model=model,graph=batch, n=n, batch_size=train_batch_size, regularizer=regularizer)
         # Normalize the loss -- divide by the batch size (default is 60)
-        total_loss = (base_loss + message_reg) / int(batch.batch[-1]+1)
+        total_loss = base_loss + message_reg
         
       elif regularizer == 'bottleneck' or regularizer == 'standard':
-        total_loss = (model.loss(batch)) / int(batch.batch[-1]+1)
+        total_loss = model.loss(batch)
         base_loss = total_loss  # No regularization
 
       # Backpropagation algorithm to calculate the gradient of loss w.r.t. all model parameters
@@ -216,7 +213,7 @@ for epoch in tqdm(range(epochs)):
       cum_loss += base_loss.item()
       
   print("__________________")
-  train_loss = cum_loss/(train_batch_size*batch_per_epoch)
+  train_loss = cum_loss/(batch_per_epoch)
   print("Train Loss: ",train_loss)   #Averaging over the epoch
 
   # Set the test loss to zero for the next epoch (beginning of an epoch)
@@ -228,7 +225,7 @@ for epoch in tqdm(range(epochs)):
     loss = model.loss(test_batch).item()
     test_loss += loss 
     
-  test_loss = test_loss/(len(test_loader)*test_batch_size) #Averaging over the epoch
+  test_loss = test_loss/(len(test_loader)) #Averaging over the epoch
   print("Test Loss: ", test_loss)
   print("__________________")
   
