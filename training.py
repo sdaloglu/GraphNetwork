@@ -12,7 +12,20 @@ from my_models import loss_function, get_edge_index, GN
 from messages import get_messages
 from copy import deepcopy as copy
 import pickle as pkl
+import subprocess
 
+
+# Extract the PyTorch version
+version_nums = torch.__version__.split('.')
+# Torch Geometric seems to always build for *.*.0 of torch :
+version_nums[-1] = '0' + version_nums[-1][1:]
+os.environ['TORCH'] = '.'.join(version_nums)
+
+# The pip install command as a string
+pip_command = f"pip install --upgrade torch-scatter -f https://pytorch-geometric.com/whl/torch-{os.environ['TORCH']}.html && pip install --upgrade torch-sparse -f https://pytorch-geometric.com/whl/torch-{os.environ['TORCH']}.html && pip install --upgrade torch-geometric"
+
+# Use subprocess to run the command
+subprocess.check_call(pip_command, shell=True)
 
 
 # Number of nodes
