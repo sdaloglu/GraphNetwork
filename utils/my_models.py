@@ -104,7 +104,7 @@ class GN(MessagePassing):
         return self.propagate(edge_index=edge_index, x = x, size = (x.size(0),x.size(0)))
    
     
-    def loss(self, graph, augmentation = False):
+    def loss(self, graph, augmentation):
   
         # Compare the ground truth acceleration with the predicted acceleration (output of the node model)
         # Using MAE as the loss function
@@ -145,7 +145,7 @@ def get_edge_index(n):
 
 
 
-def loss_function(model, graph, n, batch_size, regularizer = 'l1', augmentation = False):
+def loss_function(model, graph, augmentation, regularizer = 'l1'):
     """
     Loss function for the Graph Neural Network
     
@@ -173,15 +173,15 @@ def loss_function(model, graph, n, batch_size, regularizer = 'l1', augmentation 
     elif regularizer == 'kl':
         alpha = 1.0
         
-        message = model.message(target_node, source_node)   # Message tensor of shape [num_edges, message_dim]
+        message = model.edge_model(torch.cat([target_node, source_node],dim=1))   # Message tensor of shape [num_edges, message_dim]
         
         # Calculate the KL divergence of the message distribution
         
         mu = message[:,:100]    # Take the first half of the features as the mean of the message distribution
         log_var = message[:,100:]   # Take the second half of the features as the log variance of the message distribution
         
-        kl_reg = alpha * torch.sum(0.5 * (mu**2 + torch.exp(log_var) - log_var - 1)) * batch_size
-        kl_reg = kl_reg / (n*(n-1))    # Normalizing the regularizer by dividing by the number of edges times 2 (edge_index is directed)
+        kl_reg = alpha * torch.sum(0.5 * (mu**2 + torch.exp(log_var) - log_var - 1))
+        kl_reg = kl_reg / message.shape[0]    # Normalizing the regularizer by dividing by the number of edges in the batch
         
         return base_loss, kl_reg
     
