@@ -78,7 +78,7 @@ class GN(MessagePassing):
         return self.node_model(torch.cat([aggr_out, x], dim = 1))
         
 
-    def forward(self, x, edge_index, augmentation = False):
+    def forward(self, x, edge_index, system_dimension, augmentation):
         """
         Args:
             x (_type_): node features
@@ -97,9 +97,9 @@ class GN(MessagePassing):
             
             # Generate random noise to add to the node features
             # Make sure the noise is the same for each node feature to simulate system noise
-            noise = torch.randn(1, x.size(1)) * 0.1
+            noise = torch.randn(1, system_dimension) * 3
             noise = noise.repeat(x.size(0),1).to(x.device)
-            x = x + noise
+            x = x.index_add(1, torch.arange(system_dimension).to(x.device), noise)
             
         return self.propagate(edge_index=edge_index, x = x, size = (x.size(0),x.size(0)))
    
@@ -112,9 +112,9 @@ class GN(MessagePassing):
         x = graph.x    # Node feature matrix of the batch
         edge_index = graph.edge_index    # Graph connectivity matrix of the batch
         y = graph.y    # Output - acceleration matrix of the batch
+        system_dimension = y.shape[1]    # Dimension of the system
         
-        
-        return torch.sum(torch.abs(y - self.forward(x, edge_index, augmentation)))/y.shape[0]    # Normalize by dividing the loss by the number of nodes in the batch
+        return torch.sum(torch.abs(y - self.forward(x, edge_index, system_dimension, augmentation)))/y.shape[0]    # Normalize by dividing the loss by the number of nodes in the batch
     
     
     
