@@ -165,7 +165,7 @@ test_loader =  DataLoader(test_data, batch_size=test_batch_size, shuffle=False)
 epochs = 30
 
 # set a learning rate but should adjust it to decaying learning schedule (higher to lower)
-learning_rate = 0.001
+learning_rate = 1e-3
 
 # Define the optimizer and specify which parameters should be updated during the training process
 optimizer = torch.optim.Adam(params=model.parameters(),lr=learning_rate, weight_decay=1e-8)    # This also includes the weight regularization
@@ -174,7 +174,7 @@ optimizer = torch.optim.Adam(params=model.parameters(),lr=learning_rate, weight_
 batch_per_epoch = 5000    # Limiting the number of batches to 5000 per epoch
 
 # Define learning rate scheduler (start with low rate, gradually increasing to max, then lower than the initial learning rate)
-scheduler = OneCycleLR(optimizer, max_lr=0.001, steps_per_epoch=batch_per_epoch , epochs=epochs, final_div_factor=1e5)
+scheduler = OneCycleLR(optimizer, max_lr=learning_rate, steps_per_epoch=batch_per_epoch , epochs=epochs, final_div_factor=1e5)
 
 # Define an empty array for the messages
 messages_over_time = []
@@ -205,15 +205,14 @@ for epoch in tqdm(range(epochs)):
       if regularizer == 'l1' or regularizer == 'kl':
         
         # Calculate the loss
-        base_loss, message_reg = loss_function(model=model,graph=batch, n=n, batch_size=train_batch_size, regularizer=regularizer, augmentation = True)
-        # Normalize the loss -- divide by the batch size (default is 60)
+        base_loss, message_reg = loss_function(model=model, graph=batch, augmentation = True, regularizer=regularizer)
         total_loss = base_loss + message_reg
         
       elif regularizer == 'bottleneck' or regularizer == 'standard':
         total_loss = model.loss(batch, augmentation=True)
         base_loss = total_loss  # No regularization
 
-      # Backpropagation algorithm to calculate the gradient of loss w.r.t. all model parameters
+      # Back-propagation algorithm to calculate the gradient of loss w.r.t. all model parameters
       total_loss.backward()
 
       # Step the optimizer
@@ -231,7 +230,7 @@ for epoch in tqdm(range(epochs)):
 
   # Set the test loss to zero for the next epoch (beginning of an epoch)
   test_loss = 0.0
-  for test_batch in test_loader:    # We need mutliple batches per epoch to plot y=x
+  for test_batch in test_loader:    # We need multiple batches per epoch to plot y=x
     test_batch = test_batch.to(device)  # Move the test_batch to GPU
     
     # Calculate the test loss after each epoch
