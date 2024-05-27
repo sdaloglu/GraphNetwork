@@ -102,7 +102,7 @@ edge_indices = edge_indices.to(device)
 model = GN(input_dim=n_features, # 6 features
            message_dim=message_dim,   # Dimension of the latent space representation (hopefully force) -- 
            output_dim=dim,   # Dimension of the acceleration -- set by the choice of the physics simulation
-           hidden_units = 100,   # Intermediate latent space dimension during the forward pass.
+           hidden_units = 300,   # Intermediate latent space dimension during the forward pass.
            aggregation = 'add')
 # Move to GPU
 model = model.to(device)
@@ -115,7 +115,7 @@ data = Data(x = X_train[0], edge_index=edge_indices, y =y_train[0])
 ##################################################################
 ###################### Data Management ###########################
 ##################################################################
-train_batch_size = 60
+train_batch_size = 64
 
 # Create a list of 800,000 (100x10,000)*(0.8) graph data type for the simulation -- Training Data
 train_data = []
@@ -129,7 +129,7 @@ train_loader = DataLoader(train_data, batch_size=train_batch_size, shuffle=True)
 
 # len(X_train) = 800,000. --> Number of training data points
 # len(train_data) = 800,000. --> Number of training data points
-# len(train_loader) = 13,334. --> Number of batches = [total data points]/[batch size]
+# len(train_loader) = 12,500. --> Number of batches = [total data points]/[batch size]
 
 
 
