@@ -6,7 +6,7 @@ from torch_geometric.nn import aggr
 
 class GN(MessagePassing):
     # Using the MessagePassing base class from PyTorch Geometric
-    def __init__(self, message_dim, input_dim=6, output_dim=2, hidden_units = 100, aggregation = 'add'):
+    def __init__(self, message_dim, input_dim=6, output_dim=2, hidden_units = 300, aggregation = 'add'):
        
         # Specify the aggregation method from the temporary object of the superclass
         super(GN,self).__init__(aggr = aggregation)   # Adding forces as an inductive bias of the GN model
