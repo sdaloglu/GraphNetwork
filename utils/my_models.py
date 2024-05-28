@@ -25,18 +25,31 @@ class GN(MessagePassing):
            
         )   
 
-        self.node_model = nn.Sequential(
-            # Node model aiming to learn the true acceleration
-            # The input is the concatenation of the aggregated messages and the input of the target node
-            nn.Linear(message_dim+input_dim, hidden_units),
-            ReLU(),
-            nn.Linear(hidden_units, hidden_units),
-            ReLU(),
-            nn.Linear(hidden_units, hidden_units),
-            ReLU(),
-            nn.Linear(hidden_units, output_dim),           
+        if message_dim == 200:  # Meaning KL regularization is used
+            node_model_layers = [
+                nn.Linear(int(message_dim // 2) + input_dim, hidden_units),
+                ReLU(),
+                nn.Linear(hidden_units, hidden_units),
+                ReLU(),
+                nn.Linear(hidden_units, hidden_units),
+                ReLU(),
+                nn.Linear(hidden_units, output_dim),
+            ]
+        elif message_dim == 100 or message_dim == 2 or message_dim == 3:    # message_dim == 100 for L1 and standard, or message_dim == 2/3 for Bottleneck
+            node_model_layers = [
+                nn.Linear(message_dim + input_dim, hidden_units),
+                ReLU(),
+                nn.Linear(hidden_units, hidden_units),
+                ReLU(),
+                nn.Linear(hidden_units, hidden_units),
+                ReLU(),
+                nn.Linear(hidden_units, output_dim),
+            ]
             
-        )
+        else:
+            raise ValueError("Message dimension has to be 100 or 200. Invalid dimension is assigned")
+
+        self.node_model = nn.Sequential(*node_model_layers)
         
 
         
@@ -45,18 +58,26 @@ class GN(MessagePassing):
         # Compute messages from the source node to target node
         message = self.edge_model(torch.cat([x_i, x_j], dim = 1))
         
-        if self.message_dim == 100:    # This is when we use L1 regularization, message function is normal
+        if self.message_dim == 100:    # When we use L1 regularization, message with 100 dimensions is returned
             return message
         
-        elif self.message_dim == 200:    # This is when we use KL regularization, message function returns the mean of the predicted distributions
+        elif self.message_dim == 2 or self.message_dim == 3:  # When we use bottleneck model, message with 2/3 dimensions is returned
+            return message
+        
+        
+        elif self.message_dim == 200:    # When we use KL regularization, sample from the predicted distributions is returned
             
             # Take the first half of the features as the mean and the second half as the variance
             mean = message[:,:100]
             log_variance = message[:,100:]
-            message = mean
-            return message
+            
+            # Sample from the predicted distribution
+            sample = torch.randn_like(mean).to(x_i.device) * torch.exp(0.5*log_variance) + mean
+            
+            return sample
+        
         else:
-            raise ValueError("Message dimension has to be 100 or 200. Invalid dimensions is assigned")
+            raise ValueError("Message dimension has to be 100, 200, 2 or 3. Invalid dimensions is assigned")
                 
     
 
@@ -74,6 +95,8 @@ class GN(MessagePassing):
         
         if aggr_out.size(0) != x.size(0):    # This should correspond to the number of nodes in the batch
             raise ValueError("Number of rows in the aggregated message and node feature matrix are not the same")
+        
+
         
         return self.node_model(torch.cat([aggr_out, x], dim = 1))
         
@@ -145,7 +168,7 @@ def get_edge_index(n):
 
 
 
-def loss_function(model, graph, augmentation, regularizer = 'l1'):
+def loss_function(model, graph, augmentation, regularizer):
     """
     Loss function for the Graph Neural Network
     
