@@ -36,7 +36,7 @@ def get_messages(model, test_loader, msg_dim, dim = 2):
         x_target = batch.x[batch.edge_index[1]] 
         
         # Get the messages
-        message = model.edge_model(torch.cat([x_source, x_target], dim = 1))
+        message = model.message(x_source,x_target)
         
         # Append the node features to the messages list
         message_with_node_features = torch.cat((x_source,x_target,message), dim = 1)
