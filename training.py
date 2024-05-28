@@ -71,7 +71,7 @@ y = y_.to(device)
 
 
 # Split the data into train and test
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = 0.2, shuffle=False)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = 0.25, shuffle=False)
 
 # Number of dimensions in each node embedding (vector)
 n_features = X.shape[2]
@@ -108,7 +108,7 @@ model = GN(input_dim=n_features, # 6 features
 model = model.to(device)
 
 # Creating a graph (storing its value)
-data = Data(x = X_train[0], edge_index=edge_indices, y =y_train[0])
+data = Data(x = X_train[0], edge_index = edge_indices, y = y_train[0])
 
 
 
@@ -117,7 +117,7 @@ data = Data(x = X_train[0], edge_index=edge_indices, y =y_train[0])
 ##################################################################
 train_batch_size = 64
 
-# Create a list of 800,000 (100x10,000)*(0.8) graph data type for the simulation -- Training Data
+# Create a list of 750,000 (100x10,000)*(0.75) graph data type for the simulation -- Training Data
 train_data = []
 for i in range(len(X_train)):
   # Create a graph data type
@@ -127,17 +127,17 @@ for i in range(len(X_train)):
 # Create a loader to batch from the train_data
 train_loader = DataLoader(train_data, batch_size=train_batch_size, shuffle=True)
 
-# len(X_train) = 800,000. --> Number of training data points
-# len(train_data) = 800,000. --> Number of training data points
-# len(train_loader) = 12,500. --> Number of batches = [total data points]/[batch size]
+# len(X_train) = 750,000. --> Number of training data points
+# len(train_data) = 750,000. --> Number of training data points
+# len(train_loader) = 11,719. --> Number of batches = [total data points]/[batch size]
 
 
 
-# Create a list of 200,000 (100x10,000)*(0.2) graph data type for the simulation -- Testing Data
+# Create a list of 250,000 (100x10,000)*(0.25) graph data type for the simulation -- Testing Data
 # This time we shuffle by creating random indices, since there is only one batch
 
 np.random.seed(42)
-test_indices = np.random.randint(0,len(X_test),1000)  # Sample 1,000 random data
+test_indices = np.random.randint(0,len(X_test),5000)  # Sample 1,000 random data
 test_data = []
 for i in test_indices:
   # Create a graph data type
@@ -145,10 +145,10 @@ for i in test_indices:
   test_data.append(data)
 
 # Create a loader to batch from the test_data, batch size is larger since no gradient calculation is required for evalution
-test_batch_size = 1000
-test_loader =  DataLoader(test_data, batch_size=test_batch_size, shuffle=False)
+test_batch_size = 5000
+test_loader =  DataLoader(test_data, batch_size=int(test_batch_size/10), shuffle=False)
 
-# len(X_test) = 200,000. --> Number of testing data points
+# len(X_test) = 250,000. --> Number of testing data points
 # len(test_data) = 1,000. --> Number of testing data points chosen randomly
 # len(test_loader) = 1 --> Number of batches = [total data points]/[batch size]
 
