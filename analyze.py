@@ -11,10 +11,12 @@ import os
 
 
 # Load messages_over_time pkl file
-messages_over_time = pkl.load(open('models/messages_over_time.pkl', 'rb'))
+messages_over_time = pkl.load(open('models/messages_spring_n=4_dim=2_l1.pkl', 'rb'))
+#messages_over_time = pkl.load(open('models/messages_over_time.pkl', 'rb'))
 
 # Load model pkl file
-recorded_models = pkl.load(open('models/models_over_time.pkl', 'rb'))
+#recorded_models = pkl.load(open('models/models_over_time.pkl', 'rb'))
+recorded_models = pkl.load(open('models/models_spring_n=4_dim=2_l1.pkl', 'rb'))
 
 dim = 2
 msg_dim = 100
@@ -181,9 +183,9 @@ for i in t(range(0, len(messages_over_time), 1)):
                 
         plt.tight_layout()
     # Plot a y=x line
-    for i in range(dim):
-        ax[i].plot(ax[i].get_xlim(), ax[i].get_xlim(), 'k--')
-    plt.show()
+    #for i in range(dim):
+    #    ax[i].plot(ax[i].get_xlim(), ax[i].get_xlim(), 'k--')
+    #plt.show()
     
     cam.snap()
 
