@@ -128,6 +128,11 @@ for i in t(range(0, len(messages_over_time), 1)):
 
         ax.set_xlim(xlim)
         ax.set_ylim(ylim)
+        
+        # Add a dashed y=x line
+        min_val = min(xlim[0], ylim[0])
+        max_val = max(xlim[1], ylim[1])
+        ax.plot([min_val, max_val], [min_val, max_val], 'k--')
 
     # Plot sparsity and add standard deviation values
     sorted_indices = np.argsort(msg_importance)[::-1]
