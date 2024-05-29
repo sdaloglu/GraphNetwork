@@ -61,8 +61,10 @@ else:
   
 
 # Creating torch tensors from numpy arrays from simulation
-X_ = torch.from_numpy(np.concatenate([data[:, i] for i in range(0, data.shape[1], 5)]))   # Use time data with step size 5 (record 1 event in 5 events)
-y_ = torch.from_numpy(np.concatenate([a_vals[:, i] for i in range(0, data.shape[1], 5)]))
+#X_ = torch.from_numpy(np.concatenate([data[:, i] for i in range(0, data.shape[1], 5)]))   # Use time data with step size 5 (record 1 event in 5 events)
+#y_ = torch.from_numpy(np.concatenate([a_vals[:, i] for i in range(0, data.shape[1], 5)]))
+X_ = torch.from_numpy(np.concatenate([data[:, i] for i in range(data.shape[1])]))   # Use time data with step size 1
+y_ = torch.from_numpy(np.concatenate([a_vals[:, i] for i in range(data.shape[1])]))
 
 
 # Move data to GPU
