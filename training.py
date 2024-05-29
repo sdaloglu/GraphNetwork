@@ -137,7 +137,7 @@ train_loader = DataLoader(train_data, batch_size=train_batch_size, shuffle=True)
 # This time we shuffle by creating random indices, since there is only one batch
 
 np.random.seed(42)
-test_indices = np.random.randint(0,len(X_test),5000)  # Sample 1,000 random data
+test_indices = np.random.randint(0,len(X_test),1000)  # Sample 1,000 random data
 test_data = []
 for i in test_indices:
   # Create a graph data type
@@ -145,8 +145,8 @@ for i in test_indices:
   test_data.append(data)
 
 # Create a loader to batch from the test_data, batch size is larger since no gradient calculation is required for evalution
-test_batch_size = 5000
-test_loader =  DataLoader(test_data, batch_size=int(test_batch_size/10), shuffle=False)
+test_batch_size = 1000
+test_loader =  DataLoader(test_data, batch_size=int(test_batch_size), shuffle=False)
 
 # len(X_test) = 250,000. --> Number of testing data points
 # len(test_data) = 1,000. --> Number of testing data points chosen randomly
@@ -171,7 +171,7 @@ learning_rate = 1e-3
 optimizer = torch.optim.Adam(params=model.parameters(),lr=learning_rate, weight_decay=1e-8)    # This also includes the weight regularization
 
 # batch_per_epoch = len(train_loader)
-batch_per_epoch = 5000    # Limiting the number of batches to 5000 per epoch
+batch_per_epoch = 10000    # Limiting the number of batches to 5000 per epoch
 
 # Define learning rate scheduler (start with low rate, gradually increasing to max, then lower than the initial learning rate)
 scheduler = OneCycleLR(optimizer, max_lr=learning_rate, steps_per_epoch=batch_per_epoch , epochs=epochs, final_div_factor=1e5)
