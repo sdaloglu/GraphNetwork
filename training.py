@@ -271,17 +271,14 @@ recorded_models.append(model.state_dict())
 if not os.path.exists('models'):
   os.mkdir('models')
   
-# Save the trained model
-pkl.dump(recorded_models,
-         open('models/models_over_time.pkl', 'wb'))
+# Save the trained model with the name models_{title}_{regularizer}.pkl
+pkl.dump(recorded_models, open('models/models_{}_{}.pkl'.format(title, regularizer), 'wb'))
 
 # Save the messages
-pkl.dump(messages_over_time,
-         open('models/messages_over_time.pkl', 'wb'))
+pkl.dump(messages_over_time, open('models/messages_{}_{}.pkl'.format(title, regularizer), 'wb'))
 
 
 
 # Print if the model is saved
 print("Model saved successfully")
-
 
