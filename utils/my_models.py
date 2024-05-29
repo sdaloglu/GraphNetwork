@@ -190,8 +190,8 @@ def loss_function(model, graph, augmentation, regularizer):
         message = model.message(target_node, source_node)
         
         message_reg = alpha * torch.sum(torch.abs(message))    # Multiply by the regularizer coefficient
-        message_reg = message_reg / message.shape[0]  # Normalizing the regularizer by the number of edges in the batch
-        return base_loss, message_reg
+        message_reg_normalized = message_reg / message.shape[0]  # Normalizing the regularizer by the number of edges in the batch
+        return base_loss, message_reg_normalized
     
     elif regularizer == 'kl':
         alpha = 1.0
