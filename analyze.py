@@ -180,6 +180,10 @@ for i in t(range(0, len(messages_over_time), 1)):
                 ax[i].set_ylim(ylim)
                 
         plt.tight_layout()
+    # Plot a y=x line
+    for i in range(dim):
+        ax[i].plot(ax[i].get_xlim(), ax[i].get_xlim(), 'k--')
+    plt.show()
     
     cam.snap()
 
