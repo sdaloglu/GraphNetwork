@@ -187,7 +187,7 @@ def loss_function(model, graph, augmentation, regularizer):
     if regularizer == 'l1':
         alpha = 1e-2   
         
-        message = model.message(target_node, source_node)
+        message = model.message(source_node, target_node)
         
         message_reg = alpha * torch.sum(torch.abs(message))    # Multiply by the regularizer coefficient
         message_reg_normalized = message_reg / message.shape[0]  # Normalizing the regularizer by the number of edges in the batch
@@ -196,7 +196,7 @@ def loss_function(model, graph, augmentation, regularizer):
     elif regularizer == 'kl':
         alpha = 1.0
         
-        message = model.edge_model(torch.cat([target_node, source_node],dim=1))   # Message tensor of shape [num_edges, message_dim]
+        message = model.edge_model(torch.cat([source_node, target_node],dim=1))   # Message tensor of shape [num_edges, message_dim]
         
         # Calculate the KL divergence of the message distribution
         
