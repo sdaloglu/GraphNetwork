@@ -73,7 +73,7 @@ y = y_.to(device)
 
 
 # Split the data into train and test
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = 0.25, shuffle=False)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = 0.20, shuffle=False)
 
 # Number of dimensions in each node embedding (vector)
 n_features = X.shape[2]
@@ -109,8 +109,7 @@ model = GN(input_dim=n_features, # 6 features
 # Move to GPU
 model = model.to(device)
 
-# Creating a graph (storing its value)
-data = Data(x = X_train[0], edge_index = edge_indices, y = y_train[0])
+
 
 
 
@@ -119,39 +118,39 @@ data = Data(x = X_train[0], edge_index = edge_indices, y = y_train[0])
 ##################################################################
 train_batch_size = 64
 
-# Create a list of 750,000 (100x10,000)*(0.75) graph data type for the simulation -- Training Data
-train_data = []
+# Create a list of 800,000 (100x10,000)*(0.80) graph data type for the simulation -- Training Data
+train_data_graphs = []
 for i in range(len(X_train)):
   # Create a graph data type
-  data = Data(x = X_train[i].requires_grad_(True), edge_index=edge_indices, y =y_train[i].requires_grad_(True))
-  train_data.append(data)
+  train_data = Data(x = X_train[i].requires_grad_(True), edge_index=edge_indices, y =y_train[i].requires_grad_(True))
+  train_data_graphs.append(train_data)
 
-# Create a loader to batch from the train_data
-train_loader = DataLoader(train_data, batch_size=train_batch_size, shuffle=True)
+# Create a loader to batch from the train_data_graphs
+train_loader = DataLoader(train_data_graphs, batch_size=train_batch_size, shuffle=True)
 
-# len(X_train) = 750,000. --> Number of training data points
-# len(train_data) = 750,000. --> Number of training data points
-# len(train_loader) = 11,719. --> Number of batches = [total data points]/[batch size]
+# len(X_train) = 800,000. --> Number of training data points
+# len(train_data_graphs) = 800,000. --> Number of training data points
+# len(train_loader) = 12,500. --> Number of batches = [total data points]/[batch size]
 
 
 
-# Create a list of 250,000 (100x10,000)*(0.25) graph data type for the simulation -- Testing Data
+# Create a list of 200,000 (100x10,000)*(0.20) graph data type for the simulation -- Testing Data
 # This time we shuffle by creating random indices, since there is only one batch
 
 np.random.seed(42)
 test_indices = np.random.randint(0,len(X_test),1000)  # Sample 1,000 random data
-test_data = []
+test_data_graphs = []
 for i in test_indices:
   # Create a graph data type
-  data = Data(x = X_test[i], edge_index=edge_indices, y=y_test[i])
-  test_data.append(data)
+  test_data = Data(x = X_test[i], edge_index=edge_indices, y=y_test[i])
+  test_data_graphs.append(test_data)
 
-# Create a loader to batch from the test_data, batch size is larger since no gradient calculation is required for evalution
+# Create a loader to batch from the test_data_graphs, batch size is larger since no gradient calculation is required for evalution
 test_batch_size = 1000
-test_loader =  DataLoader(test_data, batch_size=int(test_batch_size), shuffle=False)
+test_loader =  DataLoader(test_data_graphs, batch_size=int(test_batch_size), shuffle=False)
 
-# len(X_test) = 250,000. --> Number of testing data points
-# len(test_data) = 1,000. --> Number of testing data points chosen randomly
+# len(X_test) = 200,000. --> Number of testing data points
+# len(test_data_graphs) = 1,000. --> Number of testing data points chosen randomly
 # len(test_loader) = 1 --> Number of batches = [total data points]/[batch size]
 
 
@@ -173,7 +172,7 @@ learning_rate = 1e-3
 optimizer = torch.optim.Adam(params=model.parameters(),lr=learning_rate, weight_decay=1e-8)    # This also includes the weight regularization
 
 # batch_per_epoch = len(train_loader)
-batch_per_epoch = 10000    # Limiting the number of batches to 5000 per epoch
+batch_per_epoch = len(train_loader)    # Limiting the number of batches to 5000 per epoch
 
 # Define learning rate scheduler (start with low rate, gradually increasing to max, then lower than the initial learning rate)
 scheduler = OneCycleLR(optimizer, max_lr=learning_rate, steps_per_epoch=batch_per_epoch , epochs=epochs, final_div_factor=1e5)
@@ -205,12 +204,13 @@ for epoch in tqdm(range(epochs)):
       optimizer.zero_grad()
 
       if regularizer == 'l1' or regularizer == 'kl':
-        
+        total_loss = 0
         # Calculate the loss
         base_loss, message_reg = loss_function(model=model, graph=batch, augmentation = True, regularizer=regularizer)
         total_loss = base_loss + message_reg
         
       elif regularizer == 'bottleneck' or regularizer == 'standard':
+        total_loss = 0
         total_loss = model.loss(batch, augmentation=True)
         base_loss = total_loss  # No regularization
 
