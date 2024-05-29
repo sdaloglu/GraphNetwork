@@ -83,7 +83,7 @@ class GN(MessagePassing):
 
     # The default aggregate function is used from the superclass (summing the messages)
     
-    def update(self, aggr_out, x):
+    def update(self, aggr_out, x=None):
         
         """First we concatenate the aggregated messages and the input of the target node, 
         then we pass it through the node model.
@@ -98,7 +98,7 @@ class GN(MessagePassing):
         
 
         
-        return self.node_model(torch.cat([aggr_out, x], dim = 1))
+        return self.node_model(torch.cat([x, aggr_out], dim = 1))
         
 
     def forward(self, x, edge_index, system_dimension, augmentation):
@@ -114,14 +114,13 @@ class GN(MessagePassing):
         # Calling propagate() will in turn call message(), aggregate(), and update()
         # size argument is optional and can be used to specify the dimensions of the source and target node feature matrices
 
-        x = x
         if augmentation:
             # Perform data augmentation in training loop in real time
             
             # Generate random noise to add to the node features
             # Make sure the noise is the same for each node feature to simulate system noise
             noise = torch.randn(1, system_dimension) * 3
-            noise = noise.repeat(x.size(0),1).to(x.device)
+            noise = noise.repeat(len(x),1).to(x.device)
             x = x.index_add(1, torch.arange(system_dimension).to(x.device), noise)
             
         return self.propagate(edge_index=edge_index, x = x, size = (x.size(0),x.size(0)))
