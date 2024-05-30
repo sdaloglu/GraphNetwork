@@ -167,7 +167,7 @@ def get_edge_index(n):
 
 
 
-def loss_function(model, graph, augmentation, regularizer):
+def loss_function(model, graph, augmentation, regularizer, l1_alpha):
     """
     Loss function for the Graph Neural Network
     
@@ -184,11 +184,11 @@ def loss_function(model, graph, augmentation, regularizer):
     target_node = graph.x[graph.edge_index[1]]
         
     if regularizer == 'l1':
-        alpha = 1e-2   
+        l1_alpha = l1_alpha 
         
         message = model.message(source_node, target_node)
         
-        message_reg = alpha * torch.sum(torch.abs(message))    # Multiply by the regularizer coefficient
+        message_reg = l1_alpha * torch.sum(torch.abs(message))    # Multiply by the regularizer coefficient
         message_reg_normalized = message_reg / message.shape[0]  # Normalizing the regularizer by the number of edges in the batch
         return base_loss, message_reg_normalized
     
@@ -210,3 +210,13 @@ def loss_function(model, graph, augmentation, regularizer):
     else:
         return base_loss
     
+
+# Define a function to update l1_alpha values over the training
+
+def update_l1_alpha(epoch, max_epochs, base_alpha, max_alpha):
+    if epoch < max_epochs / 2:
+        # Linearly increase
+        return base_alpha + (max_alpha - base_alpha) * (epoch / (max_epochs / 2))
+    else:
+        # Linearly decrease
+        return max_alpha - (max_alpha - base_alpha) * ((epoch - max_epochs / 2) / (max_epochs / 2))
