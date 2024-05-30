@@ -36,7 +36,15 @@ def get_messages(model, test_loader, msg_dim, dim = 2):
         x_target = batch.x[batch.edge_index[1]] 
         
         # Get the messages
-        message = model.message(x_source,x_target)
+        if msg_dim == 200:    # KL regularization
+            message = model.edge_model(torch.cat([x_source, x_target], dim = 1))
+            mean = message[:,:100]
+            message = mean
+            msg_dim = mean.shape[1] 
+            
+        else:    # L1 regularization, bottleneck, or no regularization (Standard)
+            message = model.edge_model(torch.cat([x_source, x_target], dim = 1))
+        
         
         # Append the node features to the messages list
         message_with_node_features = torch.cat((x_source,x_target,message), dim = 1)
@@ -59,8 +67,8 @@ def get_messages(model, test_loader, msg_dim, dim = 2):
     
     # Adding the extra information to the messages dataframe --> delta x and delta y and r
     # These information are used for calculating the true force
-    messages['dx'] = messages.x2 - messages.x1
-    messages['dy'] = messages.y2 - messages.y1
+    messages['dx'] = messages.x1 - messages.x2
+    messages['dy'] = messages.y1 - messages.y2
     
     if dim == 2:    
         messages['r'] = np.sqrt(
