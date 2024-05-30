@@ -8,7 +8,7 @@ from torch.optim.lr_scheduler import ReduceLROnPlateau, OneCycleLR
 from tqdm import tqdm
 import sys
 sys.path.append('utils')    # Add the utils directory to the path
-from my_models import loss_function, get_edge_index, GN
+from my_models import loss_function, get_edge_index, GN, update_l1_alpha
 from messages import get_messages
 from copy import deepcopy as copy
 import pickle as pkl
@@ -61,10 +61,10 @@ else:
   
 
 # Creating torch tensors from numpy arrays from simulation
-#X_ = torch.from_numpy(np.concatenate([data[:, i] for i in range(0, data.shape[1], 5)]))   # Use time data with step size 5 (record 1 event in 5 events)
-#y_ = torch.from_numpy(np.concatenate([a_vals[:, i] for i in range(0, data.shape[1], 5)]))
-X_ = torch.from_numpy(np.concatenate([data[:, i] for i in range(data.shape[1])]))   # Use time data with step size 1
-y_ = torch.from_numpy(np.concatenate([a_vals[:, i] for i in range(data.shape[1])]))
+X_ = torch.from_numpy(np.concatenate([data[:, i] for i in range(0, data.shape[1], 5)]))   # Use time data with step size 5 (record 1 event in 5 events)
+y_ = torch.from_numpy(np.concatenate([a_vals[:, i] for i in range(0, data.shape[1], 5)]))
+#X_ = torch.from_numpy(np.concatenate([data[:, i] for i in range(data.shape[1])]))   # Use time data with step size 1
+#y_ = torch.from_numpy(np.concatenate([a_vals[:, i] for i in range(data.shape[1])]))
 
 
 # Move data to GPU
@@ -73,7 +73,7 @@ y = y_.to(device)
 
 
 # Split the data into train and test
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = 0.20, shuffle=False)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = 0.25, shuffle=False)
 
 # Number of dimensions in each node embedding (vector)
 n_features = X.shape[2]
@@ -172,10 +172,18 @@ learning_rate = 1e-3
 optimizer = torch.optim.Adam(params=model.parameters(),lr=learning_rate, weight_decay=1e-8)    # This also includes the weight regularization
 
 # batch_per_epoch = len(train_loader)
-batch_per_epoch = len(train_loader)    # Limiting the number of batches to 5000 per epoch
+batch_per_epoch = 5000    # Limiting the number of batches to 5000 per epoch
 
 # Define learning rate scheduler (start with low rate, gradually increasing to max, then lower than the initial learning rate)
 scheduler = OneCycleLR(optimizer, max_lr=learning_rate, steps_per_epoch=batch_per_epoch , epochs=epochs, final_div_factor=1e5)
+
+
+# Initialize the l1_alpha with a small value
+base_l1_alpha = 1e-2
+max_l1_alpha = 1e-1
+l1_alpha = base_l1_alpha
+
+
 
 # Define an empty array for the messages
 messages_over_time = []
@@ -206,7 +214,8 @@ for epoch in tqdm(range(epochs)):
       if regularizer == 'l1' or regularizer == 'kl':
         total_loss = 0
         # Calculate the loss
-        base_loss, message_reg = loss_function(model=model, graph=batch, augmentation = True, regularizer=regularizer)
+        l1_alpha = update_l1_alpha(epoch, epochs, base_l1_alpha, max_l1_alpha)
+        base_loss, message_reg = loss_function(model=model, graph=batch, augmentation = True, regularizer=regularizer, l1_alpha=l1_alpha)
         total_loss = base_loss + message_reg
         
       elif regularizer == 'bottleneck' or regularizer == 'standard':
