@@ -163,7 +163,7 @@ test_loader =  DataLoader(test_data_graphs, batch_size=int(test_batch_size), shu
 
 
 # Define epochs
-epochs = 30
+epochs = 100
 
 # set a learning rate but should adjust it to decaying learning schedule (higher to lower)
 learning_rate = 1e-3
@@ -171,8 +171,10 @@ learning_rate = 1e-3
 # Define the optimizer and specify which parameters should be updated during the training process
 optimizer = torch.optim.Adam(params=model.parameters(),lr=learning_rate, weight_decay=1e-8)    # This also includes the weight regularization
 
-# batch_per_epoch = len(train_loader)
-batch_per_epoch = 5000    # Limiting the number of batches to 5000 per epoch
+batch_per_epoch = len(train_loader)
+# batch_per_epoch = 5000    # Limiting the number of batches to 5000 per epoch
+total_steps = batch_per_epoch * epochs
+current_step = 0 
 
 # Define learning rate scheduler (start with low rate, gradually increasing to max, then lower than the initial learning rate)
 scheduler = OneCycleLR(optimizer, max_lr=learning_rate, steps_per_epoch=batch_per_epoch , epochs=epochs, final_div_factor=1e5)
@@ -214,7 +216,9 @@ for epoch in tqdm(range(epochs)):
       if regularizer == 'l1' or regularizer == 'kl':
         total_loss = 0
         # Calculate the loss
-        l1_alpha = update_l1_alpha(epoch, epochs, base_l1_alpha, max_l1_alpha)
+        l1_alpha = update_l1_alpha(current_step, total_steps, base_l1_alpha, max_l1_alpha)
+        current_step += 1
+        
         base_loss, message_reg = loss_function(model=model, graph=batch, augmentation = True, regularizer=regularizer, l1_alpha=l1_alpha)
         total_loss = base_loss + message_reg
         
