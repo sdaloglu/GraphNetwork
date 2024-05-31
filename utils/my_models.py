@@ -213,10 +213,15 @@ def loss_function(model, graph, augmentation, regularizer, l1_alpha):
 
 # Define a function to update l1_alpha values over the training
 
-def update_l1_alpha(epoch, max_epochs, base_alpha, max_alpha):
-    if epoch < max_epochs / 2:
-        # Linearly increase
-        return base_alpha + (max_alpha - base_alpha) * (epoch / (max_epochs / 2))
+# def update_l1_alpha(current_step, total_steps, base_alpha, max_alpha):
+#     # Adjust l1_alpha to continuously increase throughout the training process
+#     return base_alpha + (max_alpha - base_alpha) * (current_step / total_steps)
+
+
+def update_l1_alpha(current_step, total_steps, base_alpha, max_alpha):
+    # Adjust l1_alpha to first increase and then decrease throughout the training process
+    midpoint = total_steps / 2
+    if current_step <= midpoint:
+        return base_alpha + (max_alpha - base_alpha) * (current_step / midpoint)
     else:
-        # Linearly decrease
-        return max_alpha - (max_alpha - base_alpha) * ((epoch - max_epochs / 2) / (max_epochs / 2))
+        return max_alpha - (max_alpha - base_alpha) * ((current_step - midpoint) / midpoint)
