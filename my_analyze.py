@@ -4,6 +4,7 @@ from celluloid import Camera
 from copy import deepcopy as copy
 import numpy as np
 import os
+from IPython.display import HTML
 
 # Load messages_over_time pkl file
 messages_over_time = pkl.load(open('models/messages_spring_n=4_dim=2_l1.pkl', 'rb'))
@@ -15,24 +16,30 @@ dim = 2
 msg_dim = 100
 sim = 'spring'
 
-fig = plt.figure(figsize=(8, 5))
-gs = fig.add_gridspec(2, 2, height_ratios=[1, 1])
+fig = plt.figure(figsize=(8, 6))
+gs = fig.add_gridspec(3, 2, height_ratios=[0.1, 1, 1])  # Adjust grid spec for the title axis
+
+# Create an axis for the title
+title_ax = fig.add_subplot(gs[0, :])
+title_ax.axis('off')  # Turn off axis
 
 # Top row: force components
-ax1 = fig.add_subplot(gs[0, 0])
-ax2 = fig.add_subplot(gs[0, 1])
-
+ax1 = fig.add_subplot(gs[1, 0])
+ax2 = fig.add_subplot(gs[1, 1])
 # Bottom row: single sparsity plot spanning two columns
-ax3 = fig.add_subplot(gs[1, :])
+ax3 = fig.add_subplot(gs[2, :])
 
 cam = Camera(fig)
 
-last_alpha_x1 = 0.0
-last_alpha_y1 = 0.0
+
 t = lambda _: _  # tqdm
 for i in t(range(0, len(messages_over_time), 1)):
     msgs = copy(messages_over_time[i])
-
+    
+    # Update the title in the dedicated title axis
+    title_ax.text(0.5, 0.5, f'Epoch {i+1}', ha='center', va='center', fontsize=16, transform=title_ax.transAxes)
+    title_ax.axis('off')  # Ensure axis remains off
+    
     msgs['bd'] = msgs.r + 1e-2
 
     try:
@@ -149,11 +156,11 @@ for i in t(range(0, len(messages_over_time), 1)):
         ax3.text(k + 0.5, -0.5, f'{sorted_msg_importance[k]:.2f}', ha='center', va='top', fontsize=8)
 
     plt.tight_layout()
+    
+
     cam.snap()
 
 ani = cam.animate()
-
-from IPython.display import HTML
 HTML(ani.to_jshtml())
 
 # Save the video to a file
