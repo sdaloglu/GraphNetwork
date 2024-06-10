@@ -6,18 +6,40 @@ import numpy as np
 import os
 from IPython.display import HTML
 
+
+# Open the simulated data from the data directory
+title_spring = 'spring_n=4_dim=2'
+title_r1 = 'r1_n=4_dim=2'
+title_r2 = 'r2_n=4_dim=2'
+title_charge = 'charge_n=4_dim=2'
+
+
+# Choose the title of the simulation
+title = title_r1
+
+regularizer = 'l1'
+
 # Load messages_over_time pkl file
-messages_over_time = pkl.load(open('models/messages_spring_n=4_dim=2_l1.pkl', 'rb'))
+messages_over_time = pkl.load(open('models/messages_{}_{}.pkl'.format(title, regularizer), 'rb'))
 
 # Load model pkl file
-recorded_models = pkl.load(open('models/models_spring_n=4_dim=2_l1.pkl', 'rb'))
+recorded_models = pkl.load(open('models/models_{}_{}.pkl'.format(title, regularizer), 'rb'))
 
 dim = 2
 msg_dim = 100
-sim = 'spring'
+sim = 'r1'
 
 fig = plt.figure(figsize=(8, 6))
-gs = fig.add_gridspec(3, 2, height_ratios=[0.1, 1, 1])  # Adjust grid spec for the title axis
+
+# Dynamically adjust the height ratios based on msg_dim
+if msg_dim == 2:
+    height_ratios = [0.1, 1, 0.1]  # Less vertical stretch for msg_dim 2
+elif msg_dim == 3:
+    height_ratios = [0.1, 1, 0.1]  # Slightly more vertical stretch for msg_dim 3
+else:
+    height_ratios = [0.1, 1, 1]  # Default case
+    
+gs = fig.add_gridspec(3, 2, height_ratios=height_ratios)  # Adjust grid spec for the title axis
 
 # Create an axis for the title
 title_ax = fig.add_subplot(gs[0, :])
@@ -28,6 +50,10 @@ ax1 = fig.add_subplot(gs[1, 0])
 ax2 = fig.add_subplot(gs[1, 1])
 # Bottom row: single sparsity plot spanning two columns
 ax3 = fig.add_subplot(gs[2, :])
+
+# Adjust the aspect ratio based on msg_dim
+aspect_ratio = 'auto' if msg_dim in [2, 3] else 'equal'
+ax3.set_aspect(aspect_ratio)
 
 cam = Camera(fig)
 
@@ -55,12 +81,16 @@ for i in t(range(0, len(messages_over_time), 1)):
     msgs_to_compare = (msgs_to_compare - np.average(msgs_to_compare, axis=0)) / np.std(msgs_to_compare, axis=0)
 
     pos_cols = ['dx', 'dy']
+
     if dim == 3:
         pos_cols.append('dz')
 
-    if sim != 'spring':
-        raise NotImplementedError("The current force function is for a spring. You will need to change the force function below to that expected by your simulation.")
-    force_fnc = lambda msg: -(msg.bd.values - 1)[:, None] * np.array(msg[pos_cols]) / msg.bd.values[:, None]
+    if sim == 'spring':
+        force_fnc = lambda msg: -(msg.bd.values - 1)[:, None] * np.array(msg[pos_cols]) / msg.bd.values[:, None]
+    elif sim == 'charge':
+        force_fnc = lambda msg: (msg.q1.values[:, None] * msg.q2.values[:, None]) * np.array(msg[pos_cols]) / (msg.bd.values[:, None]**3)
+    elif sim == 'r1':
+        force_fnc = lambda msg: -(msg.m1.values[:, None] * msg.m2.values[:, None] * np.array(msg[pos_cols]) ) / (msg.bd.values[:, None]**2)
 
     expected_forces = force_fnc(msgs)
 
