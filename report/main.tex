@@ -1,0 +1,191 @@
+\documentclass{article}
+
+% Language setting
+% Replace `english' with e.g. `spanish' to change the document language
+\usepackage[english]{babel}
+\usepackage[compat=1.1.0]{tikz-feynman}
+\usepackage{booktabs}
+\usepackage{amsthm}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{graphicx}
+\usepackage{subcaption}
+\usepackage{epigraph}
+\usepackage{csquotes}
+\usepackage{verbatim}
+\usepackage{markdown}
+\usepackage{csvsimple}
+% Set page size and margins
+% Replace `letterpaper' with `a4paper' for UK/EU standard size
+\usepackage[letterpaper,top=2cm,bottom=2cm,left=3cm,right=3cm,marginparwidth=1.75cm]{geometry}
+
+% Useful packages
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage[colorlinks=true, allcolors=blue]{hyperref}
+
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{lemma}[theorem]{Lemma}
+
+
+\begin{document}
+
+\begin{titlepage}
+    \centering
+    
+    \vspace*{\fill}
+    
+    \textbf{\LARGE [Re] Discovering Symbolic Models from Deep Learning with Inductive Biases}\\
+    \vspace{0.5cm}
+    \hrule % Horizontal line
+    \vspace{0.5cm}
+    \textbf{\Large Final Project}
+    
+    \vspace{3cm}
+    
+    \textbf{University of Cambridge}\\
+    \hrule % Horizontal line
+    \vspace{0.5cm}
+    \text{Department of Physics}
+    
+    \vspace{0.5cm}
+    
+    \textbf{Prepared by:}\\
+    \text{Sabahattin Mert Daloglu}\\
+    \vspace{0.5cm}
+    \textbf{Supervised by:}\\
+    \text{Miles Cranmer}\\
+    \vspace{0.5cm}
+    \text{Word Count: XXXX}
+    \vspace{1cm}
+    
+    \today
+    
+    \vspace*{\fill}
+\end{titlepage}
+
+\newpage % Start the main content on a new page
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Reproducibility Summary}
+
+\subsection{Scope of Reproducibility}
+This paper is a reproduction and analysis of the novel work demonstrated in \textbf{Discovering Symbolic Models from Deep Learning with Inductive Biases} by Cranmer et. al. Various inductive biases on the Graph Network architecture and regularization techniques are utilized to encourage sparse latent representations of edge model of the Graph Networks trained on minimizing the difference between the node model outputs and the simulated instantaneous acceleration of the particles in physical systems. Later, symbolic regression is applied to the sparsed representation of the edge embeddings to extract the physical relations between particles. As found by Cranmer et. al. the correct known force law equations are recovered for the Newtonian, spring, and charge systems in 2 and 3 dimensions. Most notably, the methods chosen for sparsing the message embeddings of the Graph Network -L1, Kullback-Leiber and Bottleneck- are compared in their successes in predicting the true force of the system and recovering the known physical equations fitted by symbolic regression.
+
+
+
+\begin{enumerate}
+    \item Briefly explain Graph Networks and the intuition behind them. Why do they provide a good inductive bias in extracting the physical interactions (force, acceleration) in physical systems?
+    \item List all the inductive biases here:
+    \item How low-dimensionality of the learned message embeddings are introduced by the message regularizer  -- Sparsity of the latent space
+    \item Later a symbolic function is learned to approximate Graph Network but it generalizes better to the out of data distribution -- show this explicitly.
+    \item Explain symbolic regression
+    \item Briefly explain each constraint introduced on the message (edge) embedding space - KL, L1, etc.
+\end{enumerate}
+
+\section{Introduction}
+
+While deep learning models are very good at learning the labels of the data represented in high-dimensional space, they are commonly referred to as black-box models noting their lack of interpretability. On the other hand, symbolic closed-form (explain what I mean by closed-form) expressions, explicitly demonstrate the correspondence of the input variables with the output directly. The work reproduced in this paper is a notable attempt to demonstrate the intersection of these two in the pursuit of making black-box deep learning models more interpretable to extract the physical intuition behind these architectures.
+
+
+align with scientific and mathematical intuition. 
+
+A natural starting point of discussion is a brief overview of the message-passing graph networks used in this study. Graph networks consist of three separable components that are the edge model, the node model, and the global model. An edge model is a function, usually consisting of multilayer perceptions (MLPs), 
+
+
+The global model is generally used for calculating an arbitrary global metric of the dynamical system and thus is not required for the systems under study. 
+
+
+
+
+By design, the edge model and the node model provide the perfect correspondence of the force and acceleration calculation of the physical system. This structure of the architecture is the first inductive biased chosen in the analysis. Explain other inductive biases.
+
+
+
+\begin{enumerate}
+    \item Proof of the learned messages are the linear transformation of the true forces.
+    \item Specify/justify the choice of hyperparameters - should be the same as the paper for reproduction. But why did I choose larger L1 message coefficient (1e-2 didn't ensure sparsity). Also state no data augmentation was used.
+    \item List all the inductive biases: choice of GN, message regularization, the choice of optimization even is an implicit regularization -- refer to Simons. 
+\end{enumerate}
+
+
+\section{Methodology} 
+
+Explain the genetic algorithm used in symbolic regression and PySR package. Why many ML algorithms are intractable for classical symbolic regression methods? But Graph Networks provide a separable internal structure that can be utilized to reduce the number of iterations.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.25\textwidth]{D_mass_cut.png}
+\caption{The invariant mass distribution of the $D^0$ meson candidates after applying feature cuts.}
+\label{fig:D_mass_cut}
+\end{figure}
+
+\section{Experiments and Results -- Symbolic Equation}
+
+\begin{enumerate}
+    \item Table of different models loss with different regularization, just like in the table
+    \item Can show the train/test loss curves over the epochs but can put in Appendix
+    \item Sparsity of learned messages after training the model. Show that the number of the most variant components is equal to the dimension of the system.
+    \item Linear combination of true forces vs message embeddings scatter plot along with the y-x line.
+    \item R2 values table of fit of the linear combination of true forces to the learned message embeddings.
+    \item Symbolic equations recovered from PySR fits.
+    \item Maybe compare the symbolic equation parameters to the linear combination fits.
+    \item If time left, apply symbolic regression to only simulation outputs and show that within the same iteration number the equation recovered is not correct or less accurate compared to fit to the GN latent representation.
+\end{enumerate}
+
+ 
+\begin{table}[h]
+    \centering
+\begin{tabular}{@{}lcccc@{}}
+    \toprule
+        Sim. &         Standard &                Bottleneck &                   L$_1$       &                   KL      \\ \midrule
+    Charge-2 &           0.016  &                   0.947   &                   0.004       &                 0.185     \\                                      
+    Charge-3 &           0.013  &                   0.980   &                   0.002       &                 0.425     \\                             
+    $r^{-1}$-2 &         0.000  &                   1.000   &                   1.000       &                 0.796     \\                                 
+    $r^{-1}$-3 &         0.000  &                   1.000   &                   1.000       &                 0.332     \\                                
+    $r^{-2}$-2 &         0.004  &                   0.993   &                   0.990       &                 0.770     \\                                
+    $r^{-2}$-3 &         0.002  &                   0.994   &                   0.977       &                 0.214     \\                                
+    Spring-2 &           0.032  &                   1.000   &                   1.000       &                 0.883     \\                                
+    Spring-3 &           0.036  &                   0.995   &                   1.000       &                 0.214     \\ \bottomrule\\
+\end{tabular}
+\caption{The $R^2$ value of a fit of
+    a linear combination of true force components to the message components
+    for a given model (see text).
+    Numbers close to 1 indicate the messages and true force are strongly correlated.
+    Successes/failures of force law symbolic regression are tabled in the appendix.
+    }
+\label{tbl:forcefit}
+\end{table}
+
+
+\section{Conclusion}
+This is an important study that uniquely shows that learned message embeddings correspond to the real force of the system (not really, but their linear combination -- hence to a linearly mapped space and mention the proof of this above).
+
+\bibliographystyle{abbrv}
+\bibliography{sample}
+
+\appendix
+\section{Generative AI}
+
+ChatGPT 3.5 was used for suggesting alternative wordings, grammar suggestions, and proofreading while writing the report. The following prompts were used during this process
+
+\begin{itemize}
+
+  \item "How to represent/write \textit{[input symbol]} in LaTeX?"
+  \item "What is another word for \textit{[input]} word?"
+  \item "Is this sentence grammatically correct? \textit{[input sentence]}"
+  \item "Is this paragraph clear for a reader? \textit{[input paragraph]}"
+  \item "How to rephrase this sentence to make it more clear? \textit{[input sentence]}"
+\end{itemize}
+
+
+The outputs were partially adapted in a way that only alternative wordings were used and not the whole output while rephrasing the conclusion and introduction parts of the report. The LateX suggestions were used for refining the symbols and decay channel equations.
+
+Furthermore, the suggestions from the autocomplete feature of GitHub Copilot were utilized during the documentation of the software, and code development of the project such as writing the LaTex format labels for the plots generated.
+
+
+
+\end{document}
+
+
+
+
