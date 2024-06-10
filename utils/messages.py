@@ -40,7 +40,6 @@ def get_messages(model, test_loader, msg_dim, dim = 2):
             message = model.edge_model(torch.cat([x_source, x_target], dim = 1))
             mean = message[:,:100]
             message = mean
-            msg_dim = mean.shape[1] 
             
         else:    # L1 regularization, bottleneck, or no regularization (Standard)
             message = model.edge_model(torch.cat([x_source, x_target], dim = 1))
@@ -49,12 +48,21 @@ def get_messages(model, test_loader, msg_dim, dim = 2):
         # Append the node features to the messages list
         message_with_node_features = torch.cat((x_source,x_target,message), dim = 1)
         
-        if dim == 2:
-            columns = [elem%(k) for k in range(1, 3) for elem in 'x%d y%d vx%d vy%d q%d m%d'.split(' ')]
-            columns += ['e%d'%(k,) for k in range(msg_dim)]
-        elif dim == 3:
-            columns = [elem%(k) for k in range(1, 3) for elem in 'x%d y%d z%d vx%d vy%d vz%d q%d m%d'.split(' ')]
-            columns += ['e%d'%(k,) for k in range(msg_dim)]
+        
+        if msg_dim == 200: # KL regularization
+            if dim == 2:
+                columns = [elem%(k) for k in range(1, 3) for elem in 'x%d y%d vx%d vy%d q%d m%d'.split(' ')]
+                columns += ['e%d'%(k,) for k in range(100)]
+            elif dim == 3:
+                columns = [elem%(k) for k in range(1, 3) for elem in 'x%d y%d z%d vx%d vy%d vz%d q%d m%d'.split(' ')]
+                columns += ['e%d'%(k,) for k in range(100)]
+        else:
+            if dim == 2:
+                columns = [elem%(k) for k in range(1, 3) for elem in 'x%d y%d vx%d vy%d q%d m%d'.split(' ')]
+                columns += ['e%d'%(k,) for k in range(msg_dim)]
+            elif dim == 3:
+                columns = [elem%(k) for k in range(1, 3) for elem in 'x%d y%d z%d vx%d vy%d vz%d q%d m%d'.split(' ')]
+                columns += ['e%d'%(k,) for k in range(msg_dim)]
 
         
         # List of messages -- Pandas dataframe
