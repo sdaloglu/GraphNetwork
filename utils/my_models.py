@@ -1,31 +1,39 @@
 import torch
 import torch.nn as nn
-from torch_geometric.nn import MessagePassing    # Message Passing Graph Neural Network (what we are using)
+from torch_geometric.nn import MessagePassing  # Message Passing Graph Neural Network (what we are using)
 from torch.nn import ReLU
 from torch_geometric.nn import aggr
 
 class GN(MessagePassing):
-    # Using the MessagePassing base class from PyTorch Geometric
-    def __init__(self, message_dim, input_dim=6, output_dim=2, hidden_units = 300, aggregation = 'add'):
-       
+    """
+    Graph Neural Network using the MessagePassing base class from PyTorch Geometric.
+    
+    Args:
+        message_dim (int): Dimension of the message.
+        input_dim (int, optional): Dimension of the input features. Default is 6.
+        output_dim (int, optional): Dimension of the output features. Default is 2.
+        hidden_units (int, optional): Number of hidden units in the neural network layers. Default is 300.
+        aggregation (str, optional): Aggregation method to use. Default is 'add'.
+    """
+    def __init__(self, message_dim, input_dim=6, output_dim=2, hidden_units=300, aggregation='add'):
         # Specify the aggregation method from the temporary object of the superclass
-        super(GN,self).__init__(aggr = aggregation)   # Adding forces as an inductive bias of the GN model
+        super(GN, self).__init__(aggr=aggregation)  # Adding forces as an inductive bias of the GN model
 
         self.message_dim = message_dim
         
-        self.edge_model = nn.Sequential( 
-            # Edge model aiming to learn the true force
-            nn.Linear(2*input_dim, hidden_units),
+        # Define the edge model
+        self.edge_model = nn.Sequential(
+            nn.Linear(2 * input_dim, hidden_units),
             ReLU(),
             nn.Linear(hidden_units, hidden_units),
             ReLU(),
             nn.Linear(hidden_units, hidden_units),
             ReLU(),
-            nn.Linear(hidden_units, message_dim),           
-           
-        )   
+            nn.Linear(hidden_units, message_dim),
+        )
 
-        if message_dim == 200:  # Meaning KL regularization is used
+        # Define the node model based on the message dimension
+        if message_dim == 200:  # KL regularization
             node_model_layers = [
                 nn.Linear(int(message_dim // 2) + input_dim, hidden_units),
                 ReLU(),
@@ -35,7 +43,7 @@ class GN(MessagePassing):
                 ReLU(),
                 nn.Linear(hidden_units, output_dim),
             ]
-        elif message_dim == 100 or message_dim == 2 or message_dim == 3:    # message_dim == 100 for L1 and standard, or message_dim == 2/3 for Bottleneck
+        elif message_dim in [100, 2, 3]:  # L1 regularization, Standard or Bottleneck
             node_model_layers = [
                 nn.Linear(message_dim + input_dim, hidden_units),
                 ReLU(),
@@ -45,181 +53,181 @@ class GN(MessagePassing):
                 ReLU(),
                 nn.Linear(hidden_units, output_dim),
             ]
-            
         else:
-            raise ValueError("Message dimension has to be 100 or 200. Invalid dimension is assigned")
+            raise ValueError("Message dimension has to be 100, 200, 2 or 3. Invalid dimension is assigned")
 
         self.node_model = nn.Sequential(*node_model_layers)
-        
 
-        
     def message(self, x_i, x_j):
+        """
+        Compute messages from the source node to the target node.
         
-        # Compute messages from the source node to target node
-        message = self.edge_model(torch.cat([x_i, x_j], dim = 1))
+        Args:
+            x_i (Tensor): Features of the target nodes.
+            x_j (Tensor): Features of the source nodes.
         
-        if self.message_dim == 100:    # When we use L1 regularization, message with 100 dimensions is returned
+        Returns:
+            Tensor: Computed messages.
+        """
+        message = self.edge_model(torch.cat([x_i, x_j], dim=1))
+        
+        if self.message_dim == 100:  # L1 regularization
             return message
-        
-        elif self.message_dim == 2 or self.message_dim == 3:  # When we use bottleneck model, message with 2/3 dimensions is returned
+        elif self.message_dim in [2, 3]:  # Bottleneck model
             return message
-        
-        
-        elif self.message_dim == 200:    # When we use KL regularization, sample from the predicted distributions is returned
-            
-            # Take the first half of the features as the mean and the second half as the variance
-            mean = message[:,:100]
-            log_variance = message[:,100:]
-            
-            # Sample from the predicted distribution
-            sample = torch.randn_like(mean).to(x_i.device) * torch.exp(0.5*log_variance) + mean
-            
+        elif self.message_dim == 200:  # KL regularization
+            mu = message[:, 0::2]
+            log_var = message[:, 1::2]
+            sample = torch.randn_like(mu).to(x_i.device) * torch.exp(0.5 * log_var) + mu
             return sample
-        
         else:
             raise ValueError("Message dimension has to be 100, 200, 2 or 3. Invalid dimensions is assigned")
-                
-    
 
-    # The default aggregate function is used from the superclass (summing the messages)
-    
     def update(self, aggr_out, x=None):
-        
-        """First we concatenate the aggregated messages and the input of the target node, 
-        then we pass it through the node model.
-
-        Returns:
-            _type_: _description_
         """
-        # aggr_ouput is the added message outputs for each node, thus has the shape [n_particles, message_dim]
+        Update node features by concatenating the aggregated messages and the input of the target node,
+        then passing it through the node model.
         
-        if aggr_out.size(0) != x.size(0):    # This should correspond to the number of nodes in the batch
+        Args:
+            aggr_out (Tensor): Aggregated messages.
+            x (Tensor, optional): Node features. Default is None.
+        
+        Returns:
+            Tensor: Updated node features.
+        """
+        if aggr_out.size(0) != x.size(0):
             raise ValueError("Number of rows in the aggregated message and node feature matrix are not the same")
         
-
-        
-        return self.node_model(torch.cat([x, aggr_out], dim = 1))
-        
+        return self.node_model(torch.cat([x, aggr_out], dim=1))
 
     def forward(self, x, edge_index, system_dimension, augmentation):
         """
+        Forward pass of the neural network.
+        
         Args:
-            x (_type_): node features
-            edge_index (_type_): edge indices
-
+            x (Tensor): Node features.
+            edge_index (Tensor): Edge indices.
+            system_dimension (int): Dimension of the system.
+            augmentation (bool): Whether to perform data augmentation.
+        
         Returns:
-            _type_: _description_
+            Tensor: Output of the propagate function.
         """
-        # forward pass of the neural network
+
         # Calling propagate() will in turn call message(), aggregate(), and update()
         # size argument is optional and can be used to specify the dimensions of the source and target node feature matrices
 
         if augmentation:
             # Perform data augmentation in training loop in real time
-            
             # Generate random noise to add to the node features
             # Make sure the noise is the same for each node feature to simulate system noise
             noise = torch.randn(1, system_dimension) * 3
-            noise = noise.repeat(len(x),1).to(x.device)
+            noise = noise.repeat(len(x), 1).to(x.device)
             x = x.index_add(1, torch.arange(system_dimension).to(x.device), noise)
-            
-        return self.propagate(edge_index=edge_index, x = x, size = (x.size(0),x.size(0)))
-   
-    
-    def loss(self, graph, augmentation):
-  
-        # Compare the ground truth acceleration with the predicted acceleration (output of the node model)
-        # Using MAE as the loss function
         
+        return self.propagate(edge_index=edge_index, x=x, size=(x.size(0), x.size(0)))
+
+    def loss(self, graph, augmentation):
+        """
+        Compute the loss by comparing the ground truth acceleration with the predicted acceleration.
+        
+        Args:
+            graph (Data): Graph object containing node features, edge indices, and ground truth.
+            augmentation (bool): Whether to perform data augmentation.
+        
+        Returns:
+            Tensor: Computed loss.
+        """
         x = graph.x    # Node feature matrix of the batch
         edge_index = graph.edge_index    # Graph connectivity matrix of the batch
         y = graph.y    # Output - acceleration matrix of the batch
         system_dimension = y.shape[1]    # Dimension of the system
         
-        return torch.sum(torch.abs(y - self.forward(x, edge_index, system_dimension, augmentation)))/y.shape[0]    # Normalize by dividing the loss by the number of nodes in the batch
-    
-    
-    
-    
+        return torch.sum(torch.abs(y - self.forward(x, edge_index, system_dimension, augmentation))) / y.shape[0]  # Normalize by dividing the loss by the number of nodes in the batch
+
 def get_edge_index(n):
     """
-    Creating an adjacency tensor for a fully connected graph with n nodes
+    Create an adjacency tensor for a fully connected graph with n nodes.
     
     Args:
-        n (_type_): number of nodes
-
+        n (int): Number of nodes.
+    
     Returns:
-        _type_: _description_
+        Tensor: Edge index tensor of shape [2, num_edges].
     """
     
     # Create an adjacency matrix for a fully connected graph, excluding self-loops
-    ones = torch.ones(n,n, dtype = torch.int32)
-    adjacency_matrix = ones - torch.eye(n, dtype = torch.int32)
-    
-    
-    # Find indices of non-zero elements (edges)
+    ones = torch.ones(n, n, dtype=torch.int32)
+    adjacency_matrix = ones - torch.eye(n, dtype=torch.int32)
     edge_index = (adjacency_matrix == 1).nonzero(as_tuple=False).t()
-
     # Now, edge_index is a [2, num_edges] tensor 
 
     
     return edge_index
 
-
-
 def loss_function(model, graph, augmentation, regularizer, l1_alpha):
     """
-    Loss function for the Graph Neural Network
+    Loss function for the Graph Neural Network.
     
     Args:
-        model (_type_): Graph Neural Network model
-        graph (_type_): Graph object
-
+        model (GN): Graph Neural Network model.
+        graph (Data): Graph object containing node features, edge indices, and ground truth.
+        augmentation (bool): Whether to perform data augmentation.
+        regularizer (str): Type of regularizer ('l1' or 'kl').
+        l1_alpha (float): Regularization coefficient for L1 regularization.
+    
     Returns:
-        _type_: _description_
+        tuple: Base loss and regularization loss.
     """
-
-    base_loss = model.loss(graph, augmentation = augmentation)
+    base_loss = model.loss(graph, augmentation=augmentation)
     source_node = graph.x[graph.edge_index[0]]
     target_node = graph.x[graph.edge_index[1]]
         
     if regularizer == 'l1':
-        l1_alpha = l1_alpha 
-        
         message = model.message(source_node, target_node)
-        
-        message_reg = l1_alpha * torch.sum(torch.abs(message))    # Multiply by the regularizer coefficient
-        message_reg_normalized = message_reg / message.shape[0]  # Normalizing the regularizer by the number of edges in the batch
+        message_reg = l1_alpha * torch.sum(torch.abs(message))
+        message_reg_normalized = message_reg / message.shape[0]    # Normalizing the regularizer by the number of edges in the batch
         return base_loss, message_reg_normalized
-    
     elif regularizer == 'kl':
         alpha = 1.0
-        
-        message = model.edge_model(torch.cat([source_node, target_node],dim=1))   # Message tensor of shape [num_edges, message_dim]
-        
-        # Calculate the KL divergence of the message distribution
-        
-        mu = message[:,:100]    # Take the first half of the features as the mean of the message distribution
-        log_var = message[:,100:]   # Take the second half of the features as the log variance of the message distribution
-        
-        kl_reg = alpha * torch.sum(0.5 * (mu**2 + torch.exp(log_var) - log_var - 1))
+        message = model.edge_model(torch.cat([source_node, target_node], dim=1))
+        mu = message[:, 0::2]
+        log_var = message[:, 1::2]
+        kl_reg = alpha * torch.sum(0.5 * (mu**2 + torch.exp(log_var) - log_var))
         kl_reg = kl_reg / message.shape[0]    # Normalizing the regularizer by dividing by the number of edges in the batch
         
         return base_loss, kl_reg
-    
     else:
         return base_loss
+
+def update_l1_alpha_linear(current_step, total_steps, base_alpha, max_alpha):
+    """
+    Adjust l1_alpha to continuously increase throughout the training process.
+    This might be a better option for small number of epochs
+    Args:
+        current_step (int): Current training step.
+        total_steps (int): Total number of training steps.
+        base_alpha (float): Initial value of l1_alpha.
+        max_alpha (float): Maximum value of l1_alpha.
     
+    Returns:
+        float: Updated l1_alpha value.
+    """
+    return base_alpha + (max_alpha - base_alpha) * (current_step / total_steps)
 
-# Define a function to update l1_alpha values over the training
-
-# def update_l1_alpha(current_step, total_steps, base_alpha, max_alpha):
-#     # Adjust l1_alpha to continuously increase throughout the training process
-#     return base_alpha + (max_alpha - base_alpha) * (current_step / total_steps)
-
-
-def update_l1_alpha(current_step, total_steps, base_alpha, max_alpha):
-    # Adjust l1_alpha to first increase and then decrease throughout the training process
+def update_l1_alpha_triangle(current_step, total_steps, base_alpha, max_alpha):
+    """
+    Adjust l1_alpha to first increase and then decrease throughout the training process.
+    This might be a better option for larger number of epochs
+    Args:
+        current_step (int): Current training step.
+        total_steps (int): Total number of training steps.
+        base_alpha (float): Initial value of l1_alpha.
+        max_alpha (float): Maximum value of l1_alpha.
+    
+    Returns:
+        float: Updated l1_alpha value.
+    """
     midpoint = total_steps / 2
     if current_step <= midpoint:
         return base_alpha + (max_alpha - base_alpha) * (current_step / midpoint)
