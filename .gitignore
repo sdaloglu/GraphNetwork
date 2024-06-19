@@ -13,3 +13,6 @@ slurm*
 
 # Ignore the models directory
 models/
+
+# Ignore the checkpounts directory
+.ipynb_checkpoints/
