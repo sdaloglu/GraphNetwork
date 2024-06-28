@@ -1,0 +1,15 @@
+Symbolic equation for \( F_x \):
+(-1.0655512 + 1.0545231/r)*(dx - 0.854333710265366*dy)/(m1 + 8.55086252)
+
+Symbolic equation for \( F_y \):
+0.113754846*(dx + dy)*(r - 0.9896646)/(0.11740272*m1*r + r)
+
+Symbolic equation for \( a_x \):
+37.039536*F1_aggr
+
+Symbolic equation for \( a_y \):
+-40.54979*F2_aggr
+
+Final test loss of the GN after full training: 0.016672607511281967
+MAE for the first dimension of the acceleration by using the symbolic equation: 2.7474892139434814
+MAE for the second dimension of the acceleration by using the symbolic equation: 3.314373254776001
