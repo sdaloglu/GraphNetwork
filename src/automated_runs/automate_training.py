@@ -19,5 +19,5 @@ for title in titles:
         subprocess.run(f"python {training_script_path} --data {title} --regularizer {regularizer}", shell=True)
     
         print(f"Analyzing edge embeddings for {title} with {regularizer} regularizer")
-        analyze_script_path = os.path.join(parent_dir, "my_analyze.py")
+        analyze_script_path = os.path.join(parent_dir, "analyze.py")
         subprocess.run(f"python {analyze_script_path} --data {title} --regularizer {regularizer}", shell=True)
