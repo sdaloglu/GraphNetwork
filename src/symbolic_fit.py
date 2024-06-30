@@ -23,8 +23,6 @@ import argparse
 
 # Create a figure and axes
 fig, ax = plt.subplots()
-
-
 dim = 2
 
 title_spring = 'spring_n=4_dim=2'
@@ -263,20 +261,21 @@ model3.fit(input1, acc1)
 model4.fit(input2, acc2)
 
 
-
+# Define the symbolic formulas for the edge models
 def model1_formula(dx, dy, r, m1, m2, q1, q2):
     return [model1.sympy().subs({'dx': x, 'dy': y, 'r': z, 'm1': w, 'm2': v, 'q1': u, 'q2': t}).evalf() for x, y, z, w, v, u, t in zip(dx, dy, r, m1, m2, q1, q2)]
 
 def model2_formula(dx, dy, r, m1, m2, q1, q2):
     return [model2.sympy().subs({'dx': x, 'dy': y, 'r': z, 'm1': w, 'm2': v, 'q1': u, 'q2': t}).evalf() for x, y, z, w, v, u, t in zip(dx, dy, r, m1, m2, q1, q2)]
 
+# Define the symbolic formulas for the node models
 def model3_formula(F1_aggr, x1, y1, vx1, vy1, m1, q1):
     return [model3.sympy().subs({'F1_aggr': a, 'x1': b, 'y1': c, 'vx1': d, 'vy1': e, 'm1': f, 'q1': g}).evalf() for a, b, c, d, e, f, g in zip(F1_aggr, x1, y1, vx1, vy1, m1, q1)]
 
 def model4_formula(F2_aggr, x1, y1, vx1, vy1, m1, q1):
     return [model4.sympy().subs({'F2_aggr': a, 'x1': b, 'y1': c, 'vx1': d, 'vy1': e, 'm1': f, 'q1': g}).evalf() for a, b, c, d, e, f, g in zip(F2_aggr, x1, y1, vx1, vy1, m1, q1)]
 
-
+# Define an overall symbolic formula that combines the edge and node models
 def NewtonLaw_x(dx, dy, r, m1, m2, x1, y1, vx1, vy1, q1, q2):
     F1 = model1_formula(dx, dy, r, m1, m2, q1, q2)
     F1_aggr = pd.Series(F1).values.reshape(-1, 3).sum(axis=1)
@@ -288,6 +287,7 @@ def NewtonLaw_x(dx, dy, r, m1, m2, x1, y1, vx1, vy1, q1, q2):
     acc1 = model3_formula(F1_aggr, x1, y1, vx1, vy1, m1, q1)
     return acc1
 
+# Define an overall symbolic formula that combines the edge and node models
 def NewtonLaw_y(dx, dy, r, m1, m2, x1, y1, vx1, vy1, q1, q2):
     F2 = model2_formula(dx, dy, r, m1, m2, q1, q2)
     F2_aggr = pd.Series(F2).values.reshape(-1, 3).sum(axis=1)
@@ -301,7 +301,7 @@ def NewtonLaw_y(dx, dy, r, m1, m2, x1, y1, vx1, vy1, q1, q2):
 
 
 
-# Feedin the test data to the symbolic equations
+# Feeding the test data to the symbolic equations
 inputs = last_message[['dx', 'dy', 'r', 'm1', 'm2', 'x1', 'y1', 'vx1', 'vy1', 'q1', 'q2']]
 acc1 = NewtonLaw_x(inputs['dx'], inputs['dy'], inputs['r'], inputs['m1'], inputs['m2'], inputs['x1'], inputs['y1'], inputs['vx1'], inputs['vy1'], inputs['q1'], inputs['q2'])
 acc2 = NewtonLaw_y(inputs['dx'], inputs['dy'], inputs['r'], inputs['m1'], inputs['m2'], inputs['x1'], inputs['y1'], inputs['vx1'], inputs['vy1'], inputs['q1'], inputs['q2'])
