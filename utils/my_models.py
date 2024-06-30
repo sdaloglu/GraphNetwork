@@ -183,7 +183,7 @@ def loss_function(model, graph, augmentation, regularizer, l1_alpha):
     source_node = graph.x[graph.edge_index[0]]
     target_node = graph.x[graph.edge_index[1]]
         
-    if regularizer == 'l1':
+    if regularizer == 'l1' or regularizer == 'linear_l1' or regularizer == 'triangle_l1':
         message = model.message(source_node, target_node)
         message_reg = l1_alpha * torch.sum(torch.abs(message))
         message_reg_normalized = message_reg / message.shape[0]    # Normalizing the regularizer by the number of edges in the batch
