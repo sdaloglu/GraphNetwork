@@ -1,3 +1,15 @@
+"""
+Message vectors analysis for the edge models trained in the study.
+The following functions are adapted from Dr. Miles Cranmer's public repository at:
+
+https://github.com/MilesCranmer/symbolic_deep_learning
+
+- linear_transformation_2d()
+- out_linear_transformation_2d()
+- percentile_sum()
+
+"""
+
 import pickle as pkl
 import matplotlib.pyplot as plt
 from celluloid import Camera
@@ -65,7 +77,6 @@ ax3.set_aspect(aspect_ratio)
 cam = Camera(fig)
 
 
-t = lambda _: _  # tqdm
 for i in t(range(0, len(messages_over_time), 1)):
     msgs = copy(messages_over_time[i])
     
@@ -112,12 +123,13 @@ for i in t(range(0, len(messages_over_time), 1)):
         return r2
     
     def percentile_sum(x):
-        x = x.ravel()
-        bot = x.min()
-        top = np.percentile(x, 90)
-        msk = (x >= bot) & (x <= top)
-        frac_good = (msk).sum() / len(x)
-        return x[msk].sum() / frac_good
+        x_flat = x.flatten()
+        lower_bound = x_flat.min()
+        upper_bound = np.percentile(x_flat, 90)
+        valid_mask = (x_flat >= lower_bound) & (x_flat <= upper_bound)
+        valid_elements = x_flat[valid_mask]
+        fraction_of_valid_elements = valid_mask.sum() / len(x_flat)
+        return valid_elements.sum() / fraction_of_valid_elements
 
     def linear_transformation_2d(alpha):
         lincomb1 = (alpha[0] * expected_forces[:, 0] + alpha[1] * expected_forces[:, 1]) + alpha[2]
@@ -193,15 +205,15 @@ HTML(ani.to_jshtml())
 html_content = ani.to_jshtml()
 
 # Specify the directory and file name
-directory = os.path.join(os.path.dirname(__file__), '..', 'data')
+directory = os.path.join(os.path.dirname(__file__), '..', 'data', 'gifs')
 file_name = f"pruned_{title}_{regularizer}.html"
-
-# Combine directory and file name to get the full file path
-file_path = os.path.join(directory, file_name)
 
 # Create the directory if it does not exist
 if not os.path.exists(directory):
     os.makedirs(directory)
+
+# Combine directory and file name to get the full file path
+file_path = os.path.join(directory, file_name)
 
 # Write the HTML content to the file
 with open(file_path, 'w') as file:
