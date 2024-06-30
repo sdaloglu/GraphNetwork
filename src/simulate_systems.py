@@ -9,6 +9,7 @@ import subprocess
 import sys
 sys.path.append('../utils')    # Add the utils directory to the path
 from simulate import SimulationDataset   # Import the simulation code defined in the same directory
+import argparse
 
 # Import the module required for simulations
 subprocess.run(['pip', 'install', 'celluloid'])
@@ -46,7 +47,10 @@ else:
 # Number of simulations to run - Number of data points (can increase to 100,000 if trapazoidal rule is used instead of RK4)
 ns = 10000
 # Potential (see below for options)
-sim = 'r2'
+parser = argparse.ArgumentParser(description='Select the simulation type.')
+parser.add_argument('--sim', type=str, help='Simulation type (e.g., r1, r2, spring, charge)', default='r2')
+args = parser.parse_args()
+sim = args.sim
 # Number of nodes
 n_particles = 4
 # Dimension
