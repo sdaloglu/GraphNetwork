@@ -56,16 +56,9 @@ def get_messages(model, test_loader, msg_dim, dim=2):
                 columns = [f'{elem}{k}' for k in range(1, 3) for elem in 'x y vx vy q m'.split()]
                 columns += [f'e{k}' for k in range(100)]
                 columns += [f'log_var{k}' for k in range(100)]
-            elif dim == 3:
-                columns = [f'{elem}{k}' for k in range(1, 3) for elem in 'x y z vx vy vz q m'.split()]
-                columns += [f'e{k}' for k in range(100)]
-                columns += [f'log_var{k}' for k in range(100)]
         else:
             if dim == 2:
                 columns = [f'{elem}{k}' for k in range(1, 3) for elem in 'x y vx vy q m'.split()]
-                columns += [f'e{k}' for k in range(msg_dim)]
-            elif dim == 3:
-                columns = [f'{elem}{k}' for k in range(1, 3) for elem in 'x y z vx vy vz q m'.split()]
                 columns += [f'e{k}' for k in range(msg_dim)]
         
         # Append the messages to the list as a Pandas DataFrame
