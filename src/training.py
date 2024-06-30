@@ -7,7 +7,9 @@ from torch_geometric.loader import DataLoader
 from torch.optim.lr_scheduler import ReduceLROnPlateau, OneCycleLR
 from tqdm import tqdm
 import sys
-sys.path.append('../utils')    # Add the utils directory to the path
+# Get the directory where the script is located
+script_dir = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(os.path.join(script_dir, '../utils'))    # Add the utils directory to the path
 from my_models import loss_function, get_edge_index, GN, update_l1_alpha_linear, update_l1_alpha_triangle
 from messages import get_messages
 from copy import deepcopy as copy
@@ -260,7 +262,7 @@ for epoch in tqdm(range(epochs)):
       # Backward pass and optimize
       optimizer.zero_grad()
 
-      if regularizer == 'l1' or regularizer == 'kl':
+      if regularizer == 'l1' or regularizer == 'kl' or regularizer == 'linear_l1' or regularizer == 'triangle_l1':
         total_loss = 0
         # Calculate the loss
         l1_alpha = update_l1_alpha_linear(current_step, total_steps, base_l1_alpha, max_l1_alpha)

@@ -7,7 +7,9 @@ import torch
 import os
 import subprocess
 import sys
-sys.path.append('../utils')    # Add the utils directory to the path
+# Get the directory where the script is located
+script_dir = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(os.path.join(script_dir, '../utils'))    # Add the utils directory to the path
 from simulate import SimulationDataset   # Import the simulation code defined in the same directory
 import argparse
 

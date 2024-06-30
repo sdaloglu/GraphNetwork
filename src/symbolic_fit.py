@@ -10,7 +10,9 @@ import os
 from scipy.optimize import minimize
 import matplotlib.pyplot as plt
 from pysr import PySRRegressor 
-sys.path.append('../utils')  
+# Get the directory where the script is located
+script_dir = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(os.path.join(script_dir, '../utils'))    # Add the utils directory to the path
 from my_models import GN, get_edge_index
 from data_loading import test_loader
 import torch
@@ -50,14 +52,14 @@ elif regularizer == 'bottleneck':
 
 # Load the message data from the trained model - this also includes the node embedding for receiving and sending nodes
 script_dir = os.path.dirname(__file__)
-messages_over_time = pkl.load(open(os.path.join(script_dir, '..', 'models', title[:2], 'pruned_messages_{title}_{regularizer}.pkl'), "rb"))
+messages_over_time = pkl.load(open(os.path.join(script_dir, '..', 'models', title[:2], f'pruned_messages_{title}_{regularizer}.pkl'), "rb"))
 
 # Ensure the number of epochs is 50
 print(len(messages_over_time))
 assert len(messages_over_time) == 50 or len(messages_over_time) == 100
 
 # Load the model data
-final_model = pkl.load(open(os.path.join(script_dir, '..', 'models', title[:2], 'pruned_models_{title}_{regularizer}.pkl'), "rb"))
+final_model = pkl.load(open(os.path.join(script_dir, '..', 'models', title[:2], f'pruned_models_{title}_{regularizer}.pkl'), "rb"))
 
 # Ensure only the fully trained last model is recorded
 assert len(final_model) == 1
@@ -108,7 +110,7 @@ ax.legend()
 
 
 # Save the figure
-fig.savefig(os.path.join(script_dir, '..', 'symbolic_fit_results', 'loss_{title}_{regularizer}.png'))
+fig.savefig(os.path.join(script_dir, '..', 'symbolic_fit_results', f'loss_{title}_{regularizer}.png'))
 
 
 ###############################################################
